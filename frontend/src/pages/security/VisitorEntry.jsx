@@ -1,31 +1,72 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
 import { PageHeader, Card, Button, CardHeader, CardContent, StatusBadge } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3002';
 
 const VisitorEntry = () => {
     const toast = useToast();
     const [visitors, setVisitors] = useState([]);
     const [form, setForm] = useState({ name: '', purpose: '', flat: '' });
 
-    const handleCheckIn = (e) => {
-        e.preventDefault();
-        const now = new Date();
-        const time = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-        const newVisitor = {
-            id: Date.now(),
-            ...form,
-            time,
-            status: 'Active'
-        };
-        setVisitors(prev => [newVisitor, ...prev]);
-        toast.success(`${form.name} checked in for flat ${form.flat}!`, 'Visitor Checked In');
-        setForm({ name: '', purpose: '', flat: '' });
+    const fetchVisitors = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/api/security/visitors`);
+            const payload = await res.json();
+            if (!res.ok || !payload.success) {
+                throw new Error(payload.message || 'Failed to fetch visitors');
+            }
+            setVisitors(payload.data || []);
+        } catch (error) {
+            toast.error(error.message || 'Failed to fetch visitors', 'Error');
+        }
     };
 
-    const handleCheckOut = (id) => {
+    useEffect(() => {
+        fetchVisitors();
+    }, []);
+
+    const handleCheckIn = async (e) => {
+        e.preventDefault();
+
+        try {
+            const res = await fetch(`${API_BASE}/api/security/visitor/checkin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(form),
+            });
+            const payload = await res.json();
+            if (!res.ok || !payload.success) {
+                throw new Error(payload.message || 'Check-in failed');
+            }
+
+            toast.success(`${form.name} checked in for flat ${form.flat}!`, 'Visitor Checked In');
+            setForm({ name: '', purpose: '', flat: '' });
+            fetchVisitors();
+        } catch (error) {
+            toast.error(error.message || 'Check-in failed', 'Error');
+        }
+    };
+
+    const handleCheckOut = async (id) => {
         const visitor = visitors.find(v => v.id === id);
-        setVisitors(prev => prev.map(v => v.id === id ? { ...v, status: 'Left' } : v));
-        toast.info(`${visitor.name} checked out`, 'Visitor Left');
+        try {
+            const res = await fetch(`${API_BASE}/api/security/visitor/checkout`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id }),
+            });
+            const payload = await res.json();
+            if (!res.ok || !payload.success) {
+                throw new Error(payload.message || 'Checkout failed');
+            }
+
+            toast.info(`${visitor.visitor_name} checked out`, 'Visitor Left');
+            fetchVisitors();
+        } catch (error) {
+            toast.error(error.message || 'Checkout failed', 'Error');
+        }
     };
 
     return (
@@ -64,13 +105,15 @@ const VisitorEntry = () => {
                                 {visitors.map(v => (
                                     <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--bg-light)' }}>
                                         <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #4f46e5, #6366f1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: '14px', flexShrink: 0 }}>
-                                            {v.name.charAt(0).toUpperCase()}
+                                            {v.visitor_name.charAt(0).toUpperCase()}
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>{v.name}</div>
-                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{v.purpose} • Flat {v.flat} • {v.time}</div>
+                                            <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-primary)' }}>{v.visitor_name}</div>
+                                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                                                {v.purpose} • Flat {v.flat_number} • {new Date(v.check_in_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                            </div>
                                         </div>
-                                        {v.status === 'Active' ? (
+                                        {v.status === 'active' ? (
                                             <Button variant="outline" size="sm" onClick={() => handleCheckOut(v.id)}>Check Out</Button>
                                         ) : (
                                             <StatusBadge status="Left" />

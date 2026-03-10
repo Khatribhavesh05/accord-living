@@ -1,8 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, LayoutDashboard } from 'lucide-react';
-import { getTracebackPath } from '../../utils/tracebackHelper';
-import '../../styles/Traceback.css';
+
 
 /**
  * TracebackNav - Navigation component for Traceback module
@@ -12,12 +11,13 @@ const TracebackNav = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const handleHome = () => {
-        navigate(getTracebackPath(location.pathname));
-    };
 
+    // Navigation handlers (no-op after Traceback removal)
+    const handleHome = () => {
+        navigate('/');
+    };
     const handleDashboard = () => {
-        navigate(getTracebackPath(location.pathname, 'matches'));
+        navigate('/');
     };
 
     return (

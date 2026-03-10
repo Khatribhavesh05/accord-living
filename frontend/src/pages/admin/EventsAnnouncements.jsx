@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { PageHeader, Card, Button } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import Modal from '../../components/ui/Modal';
+import {
+    Bell, Calendar as CalendarIcon, Clock, AlertCircle,
+    Wrench, Users, Info, Plus
+} from 'lucide-react';
+import '../resident/Announcements.css'; // Reusing the identical SaaS stylesheet
 
 const EventsAnnouncements = () => {
     const toast = useToast();
@@ -12,14 +17,14 @@ const EventsAnnouncements = () => {
     ]);
 
     const [announcements, setAnnouncements] = useState([
-        { id: 1, title: 'Water Supply Maintenance', date: '08 Feb 2026', message: 'Water supply will be disrupted from 2 PM to 5 PM due to tank cleaning.' },
-        { id: 2, title: 'Lift Service Due', date: '10 Feb 2026', message: 'Lift B-Wing will be under maintenance on 12th Feb.' },
-        { id: 3, title: 'Garbage Collection Timing', date: '01 Feb 2026', message: 'Garbage collection trucks will now arrive at 8:30 AM instead of 9:00 AM.' },
+        { id: 1, title: 'Water Supply Maintenance', type: 'maintenance', date: '08 Feb 2026', message: 'Water supply will be disrupted from 2 PM to 5 PM due to tank cleaning.' },
+        { id: 2, title: 'Lift Service Due', type: 'warning', date: '10 Feb 2026', message: 'Lift B-Wing will be under maintenance on 12th Feb.' },
+        { id: 3, title: 'Garbage Collection Timing', type: 'info', date: '01 Feb 2026', message: 'Garbage collection trucks will now arrive at 8:30 AM instead of 9:00 AM.' },
     ]);
 
     const [createModal, setCreateModal] = useState(false);
     const [createType, setCreateType] = useState('event');
-    const [form, setForm] = useState({ title: '', date: '', time: '', location: '', message: '' });
+    const [form, setForm] = useState({ title: '', date: '', time: '', location: '', message: '', annType: 'info' });
 
     const handleCreate = (e) => {
         e.preventDefault();
@@ -27,73 +32,114 @@ const EventsAnnouncements = () => {
             setEvents(prev => [...prev, { id: Date.now(), title: form.title, date: form.date, time: form.time, location: form.location }]);
             toast.success(`Event "${form.title}" created!`, 'Event Added');
         } else {
-            setAnnouncements(prev => [{ id: Date.now(), title: form.title, date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), message: form.message }, ...prev]);
+            setAnnouncements(prev => [{
+                id: Date.now(),
+                title: form.title,
+                type: form.annType,
+                date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+                message: form.message
+            }, ...prev]);
             toast.success(`Notice "${form.title}" published!`, 'Notice Posted');
         }
         setCreateModal(false);
-        setForm({ title: '', date: '', time: '', location: '', message: '' });
+        setForm({ title: '', date: '', time: '', location: '', message: '', annType: 'info' });
+    };
+
+    const getIconForType = (type) => {
+        switch (type) {
+            case 'meeting': return <Users size={20} />;
+            case 'maintenance': return <Wrench size={20} />;
+            case 'warning': return <AlertCircle size={20} />;
+            case 'event': return <CalendarIcon size={20} />;
+            case 'info': default: return <Info size={20} />;
+        }
     };
 
     return (
-        <>
+        <div className="ac-page" style={{ padding: '0', background: 'transparent' }}>
             <PageHeader
                 title="Events & Announcements"
                 subtitle="Manage society notices and gatherings"
-                action={<Button variant="primary" onClick={() => setCreateModal(true)}>+ Create New</Button>}
+                action={<Button variant="primary" onClick={() => setCreateModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Plus size={16} /> Create New</Button>}
             />
 
             <div className="grid-2" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '24px' }}>
 
-                {/* Events Section */}
-                <Card>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: 'var(--brand-blue)' }}>Upcoming Events</h3>
-                        <Button variant="outline" size="sm" onClick={() => toast.info(`Showing all ${events.length} events`, 'All Events')}>View All</Button>
-                    </div>
-                    <div>
-                        {events.map((event) => (
-                            <div key={event.id} style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '8px', marginBottom: '12px', background: 'var(--bg-light)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                    <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 'bold' }}>{event.title}</h4>
-                                    <span style={{ fontSize: '12px', background: 'white', padding: '4px 8px', borderRadius: '12px', border: '1px solid var(--border)' }}>{event.date}</span>
-                                </div>
-                                <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                                    <span>⏰ {event.time}</span>
-                                    <span>📍 {event.location}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </Card>
-
-                {/* Announcements Section */}
-                <Card>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: 'var(--danger)' }}>Notice Board</h3>
+                {/* Left Col: Notice Board (SaaS Styling) */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="ac-section-title" style={{ margin: 0, padding: 0 }}>Notice Board</div>
                         <Button variant="outline" size="sm" onClick={() => {
                             setAnnouncements([]);
                             toast.success('All notices archived successfully!', 'Archived');
-                        }}>Archive</Button>
+                        }}>Archive All</Button>
                     </div>
-                    <div>
+
+                    <div className="ac-list">
                         {announcements.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-secondary)' }}>
-                                <p style={{ fontSize: '32px', marginBottom: '8px' }}>📋</p>
-                                <p>No active notices. All caught up!</p>
+                            <div className="ac-empty-state">
+                                <div className="ac-empty-icon">
+                                    <Bell size={32} />
+                                </div>
+                                <h3>No active notices</h3>
+                                <p>You're all caught up!</p>
                             </div>
                         ) : (
                             announcements.map((notice) => (
-                                <div key={notice.id} style={{ padding: '16px', borderBottom: '1px solid var(--border-light)' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                        <h5 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>{notice.title}</h5>
-                                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{notice.date}</span>
+                                <div key={notice.id} className={`ac-card type-${notice.type || 'info'}`} style={{ padding: '16px 20px' }}>
+                                    <div className="ac-icon-wrap">
+                                        {getIconForType(notice.type)}
                                     </div>
-                                    <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>{notice.message}</p>
+                                    <div className="ac-content">
+                                        <div className="ac-top-row" style={{ marginBottom: '4px' }}>
+                                            <h3 className="ac-title" style={{ fontSize: '15px' }}>{notice.title}</h3>
+                                            <div className="ac-date-badge">
+                                                <Clock size={12} /> {notice.date}
+                                            </div>
+                                        </div>
+                                        <div className="ac-description" style={{ margin: 0, fontSize: '13px' }}>
+                                            {notice.message}
+                                        </div>
+                                    </div>
                                 </div>
                             ))
                         )}
                     </div>
-                </Card>
+                </div>
+
+                {/* Right Col: Events Section */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="ac-section-title" style={{ margin: 0, padding: 0 }}>Upcoming Events</div>
+                        <Button variant="outline" size="sm" onClick={() => toast.info(`Showing all ${events.length} events`, 'All Events')}>View All</Button>
+                    </div>
+
+                    <div className="ac-list">
+                        {events.map((event) => (
+                            <div key={event.id} className="ac-card type-event" style={{ padding: '16px 20px' }}>
+                                <div className="ac-icon-wrap" style={{ background: 'var(--ac-accent-light)', color: 'var(--ac-accent)' }}>
+                                    <CalendarIcon size={20} />
+                                </div>
+                                <div className="ac-content">
+                                    <div className="ac-top-row" style={{ marginBottom: '4px' }}>
+                                        <h3 className="ac-title" style={{ fontSize: '15px' }}>{event.title}</h3>
+                                        <div className="ac-date-badge">
+                                            <Clock size={12} /> {event.date}
+                                        </div>
+                                    </div>
+                                    <div className="ac-description" style={{ margin: 0, display: 'flex', gap: '16px', fontSize: '13px', paddingTop: '4px' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <Clock size={14} /> {event.time}
+                                        </span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            📍 {event.location}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
             </div>
 
@@ -101,16 +147,18 @@ const EventsAnnouncements = () => {
             <Modal isOpen={createModal} title="Create New" onClose={() => setCreateModal(false)}>
                 <form className="modal-form" onSubmit={handleCreate}>
                     <div className="form-group">
-                        <label>Type</label>
+                        <label>Category</label>
                         <select value={createType} onChange={e => setCreateType(e.target.value)}>
-                            <option value="event">Event</option>
-                            <option value="announcement">Announcement / Notice</option>
+                            <option value="event">Society Event</option>
+                            <option value="announcement">Notice / Announcement</option>
                         </select>
                     </div>
+
                     <div className="form-group">
                         <label>Title</label>
                         <input type="text" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="e.g. Holi Celebration" required />
                     </div>
+
                     {createType === 'event' ? (
                         <>
                             <div className="form-row">
@@ -129,18 +177,29 @@ const EventsAnnouncements = () => {
                             </div>
                         </>
                     ) : (
-                        <div className="form-group">
-                            <label>Message</label>
-                            <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="Write your notice message..." rows={4} required />
-                        </div>
+                        <>
+                            <div className="form-group">
+                                <label>Notice Type</label>
+                                <select value={form.annType} onChange={e => setForm({ ...form, annType: e.target.value })}>
+                                    <option value="info">General Information</option>
+                                    <option value="maintenance">Maintenance</option>
+                                    <option value="warning">Alert/Warning</option>
+                                    <option value="meeting">Meeting</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Message</label>
+                                <textarea value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="Write your notice message..." rows={4} required />
+                            </div>
+                        </>
                     )}
                     <div className="modal-actions">
                         <Button variant="secondary" type="button" onClick={() => setCreateModal(false)}>Cancel</Button>
-                        <Button variant="primary" type="submit">Create {createType === 'event' ? 'Event' : 'Notice'}</Button>
+                        <Button variant="primary" type="submit">Publish {createType === 'event' ? 'Event' : 'Notice'}</Button>
                     </div>
                 </form>
             </Modal>
-        </>
+        </div>
     );
 };
 

@@ -1,70 +1,64 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Download, AlertTriangle, TrendingUp, Users, Clock, DivideCircle } from 'lucide-react';
 import PageHeader from '../../components/ui/PageHeader';
-import { useVisitors } from '../../context/VisitorContext';
 import '../resident/VisitorPreApproval.css';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+
 const VisitorAnalytics = () => {
-  const {
-    getAnalyticsData,
-    getSuspiciousActivities,
-    approvals,
-  } = useVisitors();
-
   const [dateRange, setDateRange] = useState('30days'); // '30days', '90days', 'all'
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [analyticsPayload, setAnalyticsPayload] = useState({
+    totalApprovals: 0,
+    entriesCompleted: 0,
+    conversionRate: 0,
+    avgStayTimeMinutes: 0,
+    approvedCount: 0,
+    cancelledCount: 0,
+    uniqueVisitors: 0,
+    uniqueResidents: 0,
+    dailyVisitors: {},
+    visitors: [],
+  });
 
-  const analyticsData = getAnalyticsData();
-  const suspiciousActivities = getSuspiciousActivities();
-
-  // Filter data by date range
-  const getFilteredData = () => {
-    let cutoffDate = null;
-
-    if (dateRange === '30days') {
-      cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 30);
-    } else if (dateRange === '90days') {
-      cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - 90);
+  const fetchAnalytics = async (range) => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const rangeParam = range === 'all' ? 'all' : range.replace('days', '');
+      const res = await fetch(`${API_BASE}/api/admin/visitor-analytics?range=${rangeParam}`);
+      const payload = await res.json();
+      if (!res.ok || !payload.success) {
+        throw new Error(payload.message || 'Failed to fetch analytics');
+      }
+      setAnalyticsPayload(payload.data || {});
+    } catch (err) {
+      setError(err.message || 'Failed to fetch analytics');
+    } finally {
+      setIsLoading(false);
     }
-
-    return approvals.filter(a => {
-      if (!cutoffDate) return true;
-      return new Date(a.createdAt) >= cutoffDate;
-    });
   };
 
-  const filteredData = getFilteredData();
+  useEffect(() => {
+    fetchAnalytics(dateRange);
+  }, [dateRange]);
+
+  const filteredData = analyticsPayload.visitors || [];
   const filteredAnalytics = {
-    totalApprovals: filteredData.length,
-    approvedCount: filteredData.filter(a => a.status === 'approved').length,
-    cancelledCount: filteredData.filter(a => a.status === 'cancelled').length,
-    entriesCompleted: filteredData.filter(a => a.entryTime && a.exitTime).length,
+    totalApprovals: analyticsPayload.totalApprovals || 0,
+    approvedCount: analyticsPayload.approvedCount || 0,
+    cancelledCount: analyticsPayload.cancelledCount || 0,
+    entriesCompleted: analyticsPayload.entriesCompleted || 0,
   };
 
-  // Calculate conversion rate
-  const conversionRate = filteredData.length > 0 
-    ? Math.round((filteredAnalytics.entriesCompleted / filteredAnalytics.approvedCount) * 100) 
-    : 0;
-
-  // Calculate average stay time
-  const getAverageStayTime = () => {
-    const completed = filteredData.filter(a => a.entryTime && a.exitTime);
-    if (completed.length === 0) return 0;
-
-    const totalMinutes = completed.reduce((sum, a) => {
-      const duration = new Date(a.exitTime) - new Date(a.entryTime);
-      return sum + (duration / (1000 * 60));
-    }, 0);
-
-    return Math.round(totalMinutes / completed.length);
-  };
+  const conversionRate = analyticsPayload.conversionRate || 0;
 
   // Top visitors
   const getTopVisitors = () => {
     const visitors = {};
     filteredData.forEach(a => {
-      const key = `${a.visitorName} (${a.mobileNumber})`;
+      const key = `${a.visitor_name}`;
       visitors[key] = (visitors[key] || 0) + 1;
     });
 
@@ -100,7 +94,7 @@ const VisitorAnalytics = () => {
   const getTopResidents = () => {
     const residents = {};
     filteredData.forEach(a => {
-      const key = `${a.residentName} (${a.flatNumber})`;
+      const key = `Resident (${a.flat_number})`;
       residents[key] = (residents[key] || 0) + 1;
     });
 
@@ -114,15 +108,15 @@ const VisitorAnalytics = () => {
   const handleExportCSV = () => {
     const headers = ['Visitor Name', 'Mobile', 'Resident', 'Flat', 'Purpose', 'Date', 'Approval Code', 'Entry Time', 'Exit Time', 'Status'];
     const rows = filteredData.map(a => [
-      a.visitorName,
-      a.mobileNumber,
-      a.residentName,
-      a.flatNumber,
+      a.visitor_name,
+      '',
+      'Resident',
+      a.flat_number,
       a.purpose,
-      a.dateOfVisit,
-      a.approvalCode,
-      a.entryTime ? new Date(a.entryTime).toLocaleString() : '',
-      a.exitTime ? new Date(a.exitTime).toLocaleString() : '',
+      new Date(a.check_in_at).toISOString().split('T')[0],
+      a.id,
+      a.check_in_at ? new Date(a.check_in_at).toLocaleString() : '',
+      a.check_out_at ? new Date(a.check_out_at).toLocaleString() : '',
       a.status,
     ]);
 
@@ -144,7 +138,15 @@ const VisitorAnalytics = () => {
   const topVisitors = getTopVisitors();
   const purposeDistribution = getPurposeDistribution();
   const topResidents = getTopResidents();
-  const avgStayTime = getAverageStayTime();
+  const avgStayTime = analyticsPayload.avgStayTimeMinutes || 0;
+  const suspiciousActivities = useMemo(() => {
+    return filteredData.filter((activity) => {
+      if (!activity.check_in_at) return false;
+      if (!activity.check_out_at) return false;
+      const stayMs = new Date(activity.check_out_at) - new Date(activity.check_in_at);
+      return stayMs > 6 * 60 * 60 * 1000;
+    });
+  }, [filteredData]);
 
   return (
     <div className="admin-visitor-analytics-page">
@@ -201,6 +203,13 @@ const VisitorAnalytics = () => {
             Export CSV
           </button>
         </div>
+
+        {isLoading && (
+          <div style={{ marginTop: '12px', color: 'var(--text-secondary)' }}>Loading analytics...</div>
+        )}
+        {error && (
+          <div style={{ marginTop: '12px', color: '#DC2626' }}>{error}</div>
+        )}
 
         {/* Key Metrics */}
         <div className="analytics-grid">
@@ -424,7 +433,7 @@ const VisitorAnalytics = () => {
                 {(() => {
                   const daily = {};
                   filteredData.forEach(a => {
-                    const date = a.dateOfVisit;
+                    const date = new Date(a.check_in_at).toISOString().split('T')[0];
                     daily[date] = (daily[date] || 0) + 1;
                   });
                   const peak = Object.entries(daily).sort((a, b) => b[1] - a[1])[0];
@@ -438,7 +447,7 @@ const VisitorAnalytics = () => {
                 Unique Visitors
               </div>
               <div style={{ fontSize: '18px', fontWeight: 700, color: '#16A34A' }}>
-                {new Set(filteredData.map(a => a.mobileNumber)).size}
+                {analyticsPayload.uniqueVisitors || 0}
               </div>
             </div>
 
@@ -447,7 +456,7 @@ const VisitorAnalytics = () => {
                 Unique Residents
               </div>
               <div style={{ fontSize: '18px', fontWeight: 700, color: '#4F46E5' }}>
-                {new Set(filteredData.map(a => a.residerId)).size}
+                {analyticsPayload.uniqueResidents || 0}
               </div>
             </div>
           </div>

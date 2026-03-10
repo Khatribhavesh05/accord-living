@@ -4,6 +4,7 @@
   flex-direction: column;
   gap: 24px;
   padding-bottom: 32px;
+  overflow-x: hidden;
 }
 
 /* Tab Navigation */
@@ -15,6 +16,72 @@
   border-radius: 8px 8px 0 0;
   padding: 0;
   overflow-x: auto;
+}
+
+.mode-indicator {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mode-indicator.warning {
+  background: #fff7eb;
+  border-color: #f5c987;
+  color: #8a4b00;
+}
+
+.resident-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.overview-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.overview-card p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.overview-card h3 {
+  margin: 5px 0 0;
+  color: var(--text-primary);
+  font-size: 24px;
+}
+
+.resident-detail-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.detail-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 14px;
+}
+
+.detail-card h4 {
+  margin: 0 0 8px;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.detail-card p {
+  margin: 5px 0;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
 .tab-btn {
@@ -47,7 +114,7 @@
 /* Assets Grid */
 .assets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 24px;
   align-items: stretch;
 }
@@ -63,7 +130,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: 420px;
+  min-height: 390px;
 }
 
 .asset-card:hover {
@@ -177,6 +244,24 @@
 .booking-info .purpose {
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.form-help {
+  margin-top: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.terms-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.terms-check input {
+  margin-top: 2px;
 }
 
 .booking-status {
@@ -577,8 +662,29 @@
   font-weight: 500;
 }
 
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .resident-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .resident-detail-strip {
+    grid-template-columns: 1fr;
+  }
+
   .assets-grid {
     grid-template-columns: 1fr;
   }
@@ -613,7 +719,7 @@
 
   /* Responsive Asset Cards */
   .assets-grid {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 20px;
   }
 
@@ -650,6 +756,10 @@
 }
 
 @media (max-width: 480px) {
+  .resident-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
   .assets-grid {
     grid-template-columns: 1fr;
     gap: 16px;

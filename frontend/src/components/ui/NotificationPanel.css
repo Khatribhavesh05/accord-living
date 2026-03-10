@@ -18,24 +18,46 @@
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.85);
+    color: #0f172a;
     transition: all 0.2s ease;
     z-index: 60;
 }
 
 .notification-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
+    background: rgba(15, 23, 42, 0.08);
+    color: #0f172a;
 }
 
 .notification-btn.active {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
+    background: rgba(15, 23, 42, 0.12);
+    color: #0f172a;
 }
 
 .notification-btn svg {
     width: 20px;
     height: 20px;
+}
+
+.notification-bell-emoji {
+    font-size: 24px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+[data-theme="dark"] .notification-btn {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .notification-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .notification-btn.active {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
 }
 
 /* Notification Badge */
@@ -276,7 +298,7 @@
     margin-left: 8px;
 }
 
-.action-btn {
+.notification-panel .action-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -293,24 +315,25 @@
     opacity: 0;
 }
 
-.notification-item:hover .action-btn {
+.notification-item:hover .notification-panel .action-btn,
+.notification-panel .notification-item:hover .action-btn {
     opacity: 1;
 }
 
-.action-btn.mark-read {
+.notification-panel .action-btn.mark-read {
     color: #16a34a;
 }
 
-.action-btn.mark-read:hover {
+.notification-panel .action-btn.mark-read:hover {
     background: #dcfce7;
     color: #15803d;
 }
 
-.action-btn.delete {
+.notification-panel .action-btn.delete {
     color: #ef4444;
 }
 
-.action-btn.delete:hover {
+.notification-panel .action-btn.delete:hover {
     background: #fee2e2;
     color: #dc2626;
 }

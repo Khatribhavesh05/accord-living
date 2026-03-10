@@ -57,7 +57,7 @@ const SecurityDashboard = () => {
                             {[
                                 { time: '2:30 PM', text: 'Visitor Rahul checked in — Flat A-101', icon: '👤' },
                                 { time: '1:15 PM', text: 'Amazon delivery logged — Flat B-205', icon: '📦' },
-                                { time: '12:00 PM', text: 'Vehicle KA-01-AB-1234 entered', icon: '🚗' },
+                                { time: '12:00 PM', text: 'Vehicle KA-01-AB-1234 entered', icon: '�' },
                                 { time: '10:30 AM', text: 'Pre-approved visitor Anita arrived', icon: '✅' },
                             ].map((item, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '8px', background: 'var(--bg-light)' }}>

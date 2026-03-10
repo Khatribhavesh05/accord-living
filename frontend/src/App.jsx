@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { VisitorProvider } from './context/VisitorContext';
@@ -20,19 +20,47 @@ import MyListings from './modules/marketplace/pages/MyListings';
 import AdminMarketplace from './modules/marketplace/pages/AdminMarketplace';
 import PendingListings from './modules/marketplace/pages/PendingListings';
 import MarketplaceAnalytics from './modules/marketplace/pages/MarketplaceAnalytics';
+import { supabase } from './utils/supabaseClient';
+import { ToastProvider } from './components/ui/Toast';
 
 import './App.css';
 
 function App() {
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                console.log('User logged in:', session.user);
+            }
+        };
+
+        checkSession();
+
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                console.log('User authenticated:', session.user);
+            }
+        });
+
+        return () => {
+            authListener?.subscription?.unsubscribe();
+        };
+    }, []);
+
     return (
         <ThemeProvider>
             <VisitorProvider>
                 <MarketplaceProvider>
-                    <Router>
-                        <Routes>
+                    <ToastProvider>
+                        <Router>
+                            <Routes>
                             <Route path="/" element={<LandingPage />} />
+                            <Route path="/admin-dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+                            <Route path="/resident-dashboard" element={<Navigate to="/resident/dashboard" replace />} />
+                            <Route path="/security-dashboard" element={<Navigate to="/security/dashboard" replace />} />
                             <Route path="/admin" element={<AdminLayout />}>
-                                <Route index element={<AdminPages.AdminDashboard />} />
+                                <Route index element={<Navigate to="dashboard" replace />} />
+                                <Route path="dashboard" element={<AdminPages.AdminDashboard />} />
                                 <Route path="residents" element={<AdminPages.ResidentManagement />} />
                                 <Route path="shops" element={<AdminPages.ShopManagement />} />
                                 <Route path="maintenance" element={<AdminPages.BillManagement />} />
@@ -67,7 +95,8 @@ function App() {
 
                             {/* Resident Nested Routes */}
                             <Route path="/resident" element={<ResidentLayout />}>
-                                <Route index element={<ResidentPages.ResidentDashboard />} />
+                                <Route index element={<Navigate to="dashboard" replace />} />
+                                <Route path="dashboard" element={<ResidentPages.ResidentDashboard />} />
                                 <Route path="bills" element={<ResidentPages.MyBills />} />
                                 <Route path="pay" element={<ResidentPages.PayMaintenance />} />
                                 <Route path="history" element={<ResidentPages.PaymentHistory />} />
@@ -98,7 +127,8 @@ function App() {
                             </Route>
 
                             <Route path="/security" element={<SecurityLayout />}>
-                                <Route index element={<SecurityPages.SecurityDashboard />} />
+                                <Route index element={<Navigate to="dashboard" replace />} />
+                                <Route path="dashboard" element={<SecurityPages.SecurityDashboard />} />
                                 <Route path="visitors" element={<SecurityPages.VisitorEntry />} />
                                 <Route path="vehicles" element={<SecurityPages.VehicleEntry />} />
                                 <Route path="deliveries" element={<SecurityPages.Deliveries />} />
@@ -115,8 +145,9 @@ function App() {
                                 <Route path="traceback/prove-ownership" element={<AdminPages.ProveOwnership />} />
                                 <Route path="traceback/claim-review" element={<AdminPages.FinderClaimReview />} />
                             </Route>
-                        </Routes>
-                    </Router>
+                            </Routes>
+                        </Router>
+                    </ToastProvider>
                 </MarketplaceProvider>
             </VisitorProvider>
         </ThemeProvider>

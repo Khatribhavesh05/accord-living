@@ -1,35 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, X, AlertCircle, Info, CheckCircle } from 'lucide-react';
 import './NotificationPanel.css';
+import {
+    clearNotificationsForCurrentUser,
+    deleteNotificationById,
+    getNotificationUpdateEvent,
+    listNotificationsForCurrentUser,
+    markNotificationAsRead,
+} from '../../utils/notificationStorage';
 
 const NotificationPanel = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [notifications, setNotifications] = useState([
-        {
-            id: 1,
-            type: 'alert',
-            title: 'Maintenance Alert',
-            message: 'Water tank cleaning scheduled for tomorrow at 10 AM',
-            timestamp: '5 minutes ago',
-            read: false
-        },
-        {
-            id: 2,
-            type: 'info',
-            title: 'New Payment Received',
-            message: 'Payment received from Apartment 102 for maintenance',
-            timestamp: '1 hour ago',
-            read: false
-        },
-        {
-            id: 3,
-            type: 'success',
-            title: 'Document Approved',
-            message: 'Your budget proposal has been approved',
-            timestamp: '2 hours ago',
-            read: true
-        }
-    ]);
+    const [notifications, setNotifications] = useState(() => listNotificationsForCurrentUser());
 
     const panelRef = useRef(null);
     const buttonRef = useRef(null);
@@ -68,17 +50,32 @@ const NotificationPanel = () => {
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        const syncNotifications = () => setNotifications(listNotificationsForCurrentUser());
+        syncNotifications();
+
+        const eventName = getNotificationUpdateEvent();
+        window.addEventListener(eventName, syncNotifications);
+        window.addEventListener('storage', syncNotifications);
+
+        return () => {
+            window.removeEventListener(eventName, syncNotifications);
+            window.removeEventListener('storage', syncNotifications);
+        };
+    }, []);
+
     const handleMarkAsRead = (id) => {
-        setNotifications(notifications.map(notif =>
-            notif.id === id ? { ...notif, read: true } : notif
-        ));
+        markNotificationAsRead(id);
+        setNotifications(listNotificationsForCurrentUser());
     };
 
     const handleDeleteNotification = (id) => {
-        setNotifications(notifications.filter(notif => notif.id !== id));
+        deleteNotificationById(id);
+        setNotifications(listNotificationsForCurrentUser());
     };
 
     const handleClearAll = () => {
+        clearNotificationsForCurrentUser();
         setNotifications([]);
         setIsOpen(false);
     };
@@ -107,7 +104,7 @@ const NotificationPanel = () => {
                 aria-label="Notifications"
                 aria-expanded={isOpen}
             >
-                <Bell size={20} strokeWidth={2} />
+                <span className="notification-bell-emoji" aria-hidden="true">🔔</span>
                 {unreadCount > 0 && (
                     <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
                 )}

@@ -1,107 +1,177 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../../styles/Login.css';
 import { Button } from '../ui';
+import { supabase } from '../../utils/supabaseClient';
+import {
+    getOrCreateProfile,
+    getProfileByEmail,
+    getDashboardPathByRole,
+    isProfileApproved,
+    normalizeRole,
+} from '../../utils/authUtils';
 
-const demoUsers = [
-    { email: 'admin@society.local', password: 'Admin@12345', name: 'Society Admin', role: 'admin' },
-    { email: 'resident1@society.local', password: 'Resident@123', name: 'Raj Kumar', role: 'resident', flat: 'A-101' },
-    { email: 'resident2@society.local', password: 'Resident@123', name: 'Priya Singh', role: 'resident', flat: 'A-102' },
-    { email: 'security@society.local', password: 'Security@123', name: 'Ram Singh', role: 'security' }
-];
+const LOGIN_TIMEOUT_MS = 12000;
+const SELECTED_ROLE_STORAGE_KEY = 'selectedRole';
+
+const DEMO_USERS = {
+    'admin@society.local': {
+        password: 'Admin@12345',
+        role: 'admin',
+        name: 'Demo Admin',
+        id: 'demo-admin',
+    },
+    'resident1@society.local': {
+        password: 'Resident@123',
+        role: 'resident',
+        name: 'Demo Resident',
+        id: 'demo-resident-1',
+    },
+    'security@society.local': {
+        password: 'Security@123',
+        role: 'security',
+        name: 'Demo Security',
+        id: 'demo-security',
+    },
+};
+
+const withTimeout = (promise, timeoutMs, timeoutMessage) => {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) => {
+            setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+        }),
+    ]);
+};
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
-    const [activeRole, setActiveRole] = useState('admin');
+    const [activeRole, setActiveRole] = useState(() => normalizeRole(localStorage.getItem(SELECTED_ROLE_STORAGE_KEY) || 'admin'));
     const [errorMsg, setErrorMsg] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [demoExpanded, setDemoExpanded] = useState(false);
-    const [autoLoginEnabled, setAutoLoginEnabled] = useState(false);
     const navigate = useNavigate();
 
-    const handleLogin = async (e, overrideEmail, overridePassword, overrideRole) => {
-        e.preventDefault();
+    const tryDemoLogin = (normalizedEmail, rawPassword) => {
+        const demoUser = DEMO_USERS[normalizedEmail];
+        if (!demoUser || demoUser.password !== rawPassword) {
+            return false;
+        }
 
-        const loginEmail = overrideEmail || email;
-        const loginPassword = overridePassword || password;
-        const loginRole = overrideRole || activeRole;
+        const role = normalizeRole(demoUser.role || activeRole);
+        localStorage.setItem('user', JSON.stringify({
+            id: demoUser.id,
+            email: normalizedEmail,
+            name: demoUser.name,
+            role,
+        }));
 
-        // Check demo credentials first (demo fallback)
-        const demoUser = demoUsers.find(u => u.email.toLowerCase() === loginEmail.toLowerCase());
+        setSuccessMsg('✅ Demo login successful');
+        navigate(getDashboardPathByRole(role), { replace: true });
+        return true;
+    };
 
-        if (demoUser) {
-            // Validate password
-            if (demoUser.password !== loginPassword) {
-                alert('❌ Invalid email or password');
-                return;
-            }
+    const finalizeAuthenticatedUser = async (session, preferredRole = null) => {
+        const sessionUser = session?.user;
+        const email = sessionUser?.email?.toLowerCase?.() || '';
 
-            // Validate role matches selected tab
-            if (demoUser.role !== loginRole) {
-                alert(`❌ This account belongs to ${demoUser.role.toUpperCase()} role, but you selected ${loginRole.toUpperCase()}`);
-                return;
-            }
+        if (!sessionUser || !email) return;
 
-            // Demo login successful - Call Backend to set Session
-            try {
-                await fetch('http://localhost:3001/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                        isDemoLogin: true,
-                        user: {
-                            id: 'demo-' + demoUser.role, // Mock ID
-                            email: demoUser.email,
-                            role: demoUser.role,
-                            name: demoUser.name
-                        }
-                    })
-                });
-            } catch (err) {
-                console.warn('Backend login failed, proceeding with frontend-only mode (some features may be limited)');
-            }
-
-            localStorage.setItem('user', JSON.stringify(demoUser));
-            setSuccessMsg(`✅ Welcome ${demoUser.name}! (${demoUser.role.toUpperCase()})`);
-
-            setTimeout(() => {
-                if (demoUser.role === 'admin') navigate('/admin');
-                else if (demoUser.role === 'security') navigate('/security');
-                else navigate('/resident');
-            }, 600);
+        const profile = await getOrCreateProfile(sessionUser);
+        if (!profile) {
+            await supabase.auth.signOut();
+            setErrorMsg('Unable to create your profile. Please contact your society admin.');
             return;
         }
 
-        // Real Backend Login for non-demo users
+        if (!isProfileApproved(profile)) {
+            await supabase.auth.signOut();
+            setErrorMsg('Your account is pending approval from the society administrator.');
+            return;
+        }
+
+        const selectedRole = localStorage.getItem(SELECTED_ROLE_STORAGE_KEY);
+        const finalRole = normalizeRole(preferredRole || selectedRole || activeRole || profile.role);
+
+        localStorage.setItem('user', JSON.stringify({
+            id: sessionUser.id,
+            email,
+            name: profile.name || sessionUser.user_metadata?.full_name || sessionUser.user_metadata?.name || sessionUser.email,
+            role: finalRole,
+        }));
+
+        localStorage.removeItem(SELECTED_ROLE_STORAGE_KEY);
+        navigate(getDashboardPathByRole(finalRole), { replace: true });
+    };
+
+    useEffect(() => {
+        let active = true;
+
+        const checkSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+
+            if (session && active) {
+                console.log('User logged in:', session.user);
+                await finalizeAuthenticatedUser(session);
+            }
+        };
+
+        checkSession();
+
+        const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (session && active) {
+                console.log('User authenticated:', session.user);
+                await finalizeAuthenticatedUser(session);
+            }
+        });
+
+        return () => {
+            active = false;
+            authListener?.subscription?.unsubscribe();
+        };
+    }, []);
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setErrorMsg('');
+        setSuccessMsg('');
+        setIsLoading(true);
+
         try {
-            const response = await fetch('http://localhost:3001/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ email: loginEmail, password: loginPassword })
-            });
+            localStorage.setItem(SELECTED_ROLE_STORAGE_KEY, activeRole);
+            const normalizedEmail = email.toLowerCase().trim();
+            const normalizedPassword = password.trim();
 
-            const data = await response.json();
+            if (tryDemoLogin(normalizedEmail, normalizedPassword)) {
+                return;
+            }
 
-            if (data.success) {
-                // Fetch full user details if needed, or construct from basic info
-                const userData = { email: loginEmail, role: data.role, name: 'User' };
-                localStorage.setItem('user', JSON.stringify(userData));
-                setSuccessMsg('✅ Login Successful');
+            const { data, error } = await withTimeout(
+                supabase.auth.signInWithPassword({
+                    email: normalizedEmail,
+                    password,
+                }),
+                LOGIN_TIMEOUT_MS,
+                'Login request timed out. Please check your internet and try again.'
+            );
 
-                setTimeout(() => {
-                    if (data.role === 'admin') navigate('/admin');
-                    else if (data.role === 'security') navigate('/security');
-                    else navigate('/resident');
-                }, 600);
-            } else {
-                alert('❌ ' + (data.message || 'Login failed'));
+            if (error) {
+                setErrorMsg(error.message || 'Login failed');
+                setIsLoading(false);
+                return;
+            }
+
+            setSuccessMsg('✅ Login successful');
+            if (data?.session) {
+                await finalizeAuthenticatedUser(data.session, activeRole);
             }
         } catch (err) {
             console.error(err);
-            alert('❌ Server connection failed');
+            setErrorMsg('Server connection failed');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -109,15 +179,41 @@ const Login = () => {
         setEmail(e);
         setPassword(p);
         setActiveRole(role);
+        localStorage.setItem(SELECTED_ROLE_STORAGE_KEY, role);
         setDemoExpanded(false);
     };
 
-    const handleAutoLogin = (autoEmail, autoPassword, role) => {
-        setEmail(autoEmail);
-        setPassword(autoPassword);
-        setActiveRole(role);
-        // Create a fake event object to pass to handleLogin
-        handleLogin({ preventDefault: () => { }, target: { email: { value: autoEmail }, password: { value: autoPassword } } }, autoEmail, autoPassword, role);
+    const handleGoogleLogin = async () => {
+        setErrorMsg('');
+        setSuccessMsg('');
+        setIsLoading(true);
+
+        try {
+            localStorage.setItem(SELECTED_ROLE_STORAGE_KEY, activeRole);
+            const { error } = await withTimeout(
+                supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin,
+                        queryParams: {
+                            prompt: 'select_account',
+                        },
+                    },
+                }),
+                LOGIN_TIMEOUT_MS,
+                'Google sign-in is taking too long. Please try again.'
+            );
+
+            if (error) {
+                console.error('Google login error:', error.message);
+                setErrorMsg(error.message || 'Google login failed');
+            }
+        } catch (err) {
+            console.error('Google login error:', err?.message || err);
+            setErrorMsg('Google login failed');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -125,48 +221,33 @@ const Login = () => {
             <div className="login-card">
                 <div className="logo-section">
                     <h1 className="heading">CIVIORA</h1>
-                    <p className="subtitle">Smart management for modern communities</p>
+                    <p className="subtitle">Login to manage maintenance payments</p>
                     <p className="role-text">For society members and committee administrators</p>
                 </div>
 
                 {/* Role Tabs */}
                 <div className="role-tabs">
-                    <button
+                    <button 
                         className={`role-tab ${activeRole === 'admin' ? 'active' : ''}`}
-                        onClick={() => { setActiveRole('admin'); fillCredentials('admin@society.local', 'Admin@12345', 'admin'); if (autoLoginEnabled) handleAutoLogin('admin@society.local', 'Admin@12345', 'admin'); }}
+                        onClick={() => { setActiveRole('admin'); localStorage.setItem(SELECTED_ROLE_STORAGE_KEY, 'admin'); setEmail(''); setPassword(''); }}
                         type="button"
                     >
                         👨‍💼 Admin
                     </button>
-                    <button
+                    <button 
                         className={`role-tab ${activeRole === 'resident' ? 'active' : ''}`}
-                        onClick={() => { setActiveRole('resident'); fillCredentials('resident1@society.local', 'Resident@123', 'resident'); if (autoLoginEnabled) handleAutoLogin('resident1@society.local', 'Resident@123', 'resident'); }}
+                        onClick={() => { setActiveRole('resident'); localStorage.setItem(SELECTED_ROLE_STORAGE_KEY, 'resident'); setEmail(''); setPassword(''); }}
                         type="button"
                     >
                         👤 Resident
                     </button>
-                    <button
+                    <button 
                         className={`role-tab ${activeRole === 'security' ? 'active' : ''}`}
-                        onClick={() => { setActiveRole('security'); fillCredentials('security@society.local', 'Security@123', 'security'); if (autoLoginEnabled) handleAutoLogin('security@society.local', 'Security@123', 'security'); }}
+                        onClick={() => { setActiveRole('security'); localStorage.setItem(SELECTED_ROLE_STORAGE_KEY, 'security'); setEmail(''); setPassword(''); }}
                         type="button"
                     >
                         👮 Security
                     </button>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--primary)', background: 'var(--primary-light, #e0e7ff)', padding: '4px 8px', borderRadius: 4 }}>
-                        Demo Mode Active
-                    </div>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text-secondary)' }}>
-                        <input
-                            type="checkbox"
-                            checked={autoLoginEnabled}
-                            onChange={(e) => setAutoLoginEnabled(e.target.checked)}
-                            style={{ cursor: 'pointer' }}
-                        />
-                        Auto-Login on Tab Click
-                    </label>
                 </div>
 
                 <form className="login-form" onSubmit={handleLogin}>
@@ -194,8 +275,20 @@ const Login = () => {
                         />
                     </div>
 
-                    <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '24px' }}>Login</Button>
-
+                    <Button type="submit" variant="primary" style={{ width: '100%', marginTop: '24px' }} disabled={isLoading}>
+                        {isLoading ? 'Please wait...' : 'Login'}
+                    </Button>
+                    <button type="button" className="google-login-button" style={{ marginTop: '12px' }} onClick={handleGoogleLogin} disabled={isLoading}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.2-2.27H12v4.3h6.45a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.56-5.17 3.56-8.65Z" />
+                            <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3c-1.07.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.72-4.95H1.27v3.1A12 12 0 0 0 12 24Z" />
+                            <path fill="#FBBC05" d="M5.28 14.29A7.2 7.2 0 0 1 4.9 12c0-.79.14-1.56.38-2.29v-3.1H1.27A12 12 0 0 0 0 12c0 1.94.46 3.78 1.27 5.39l4.01-3.1Z" />
+                            <path fill="#EA4335" d="M12 4.77c1.76 0 3.34.61 4.58 1.8l3.43-3.43C17.95 1.2 15.23 0 12 0A12 12 0 0 0 1.27 6.61l4.01 3.1c.94-2.84 3.6-4.94 6.72-4.94Z" />
+                        </svg>
+                        Continue with Google
+                    </button>
+                    <p className="member-contact-message">Not a member? Contact your society admin to get access.</p>
+                
                 </form>
 
                 <div className={`success-message ${successMsg ? 'show' : ''}`}>
@@ -216,8 +309,8 @@ const Login = () => {
                 <div className={`demo-accounts-list ${demoExpanded ? 'expanded' : ''}`}>
                     {demoExpanded && (
                         <>
-                            <div
-                                className="demo-account-item"
+                            <div 
+                                className="demo-account-item" 
                                 onClick={() => fillCredentials('admin@society.local', 'Admin@12345', 'admin')}
                             >
                                 <div className="demo-icon">🧑‍💼</div>
@@ -228,8 +321,8 @@ const Login = () => {
                                 </div>
                             </div>
 
-                            <div
-                                className="demo-account-item"
+                            <div 
+                                className="demo-account-item" 
                                 onClick={() => fillCredentials('resident1@society.local', 'Resident@123', 'resident')}
                             >
                                 <div className="demo-icon">🏠</div>
@@ -240,8 +333,8 @@ const Login = () => {
                                 </div>
                             </div>
 
-                            <div
-                                className="demo-account-item"
+                            <div 
+                                className="demo-account-item" 
                                 onClick={() => fillCredentials('security@society.local', 'Security@123', 'security')}
                             >
                                 <div className="demo-icon">🛡️</div>

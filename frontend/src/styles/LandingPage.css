@@ -78,6 +78,7 @@
     margin-bottom: 16px;
     letter-spacing: -2px;
     line-height: 1.1;
+    color: #ffffff;
 }
 
 .hero-tagline {
@@ -86,6 +87,7 @@
     margin-bottom: 24px;
     opacity: 0.95;
     line-height: 1.4;
+    color: #ffffff;
 }
 
 .hero-description {

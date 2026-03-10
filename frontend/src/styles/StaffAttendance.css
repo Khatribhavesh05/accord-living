@@ -1,0 +1,265 @@
+/* ==========================================================================
+   Staff Attendance – Security Dashboard Stylesheet
+   ========================================================================== */
+
+.sa-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px;
+    font-family: var(--font-sans, 'Inter', sans-serif);
+}
+
+.sa-header {
+    margin-bottom: 24px;
+}
+
+.sa-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary, #1e293b);
+    margin: 0 0 4px 0;
+}
+
+.sa-header p {
+    font-size: 14px;
+    color: var(--text-secondary, #64748b);
+    margin: 0;
+}
+
+/* Status Grid */
+.sa-status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.sa-status-card {
+    background: var(--card-bg, #ffffff);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--border, #e2e8f0);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.sa-status-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ic-blue  { background: #dbeafe; color: #2563eb; }
+.ic-purple{ background: #ede9fe; color: #7c3aed; }
+.ic-green { background: #d1fae5; color: #059669; }
+
+.st-blue  { border-left: 3px solid #2563eb; }
+.st-purple{ border-left: 3px solid #7c3aed; }
+.st-green { border-left: 3px solid #059669; }
+
+.sa-status-label {
+    font-size: 12px;
+    color: var(--text-secondary, #64748b);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+
+.sa-status-value {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary, #1e293b);
+}
+
+/* Main Panel */
+.sa-main-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 640px) {
+    .sa-main-panel {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Camera Section */
+.sa-camera-section {
+    background: var(--card-bg, #ffffff);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid var(--border, #e2e8f0);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.sa-camera-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #0f172a;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    border: 2px solid #1e293b;
+    transition: border-color 0.3s;
+}
+
+.sa-camera-frame.is-scanning {
+    border-color: #6366f1;
+}
+
+.sa-scanner-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #6366f1, transparent);
+    animation: scanMove 1.8s linear infinite;
+    z-index: 2;
+}
+
+@keyframes scanMove {
+    0%   { top: 0%; }
+    100% { top: 100%; }
+}
+
+.sa-snapshot,
+.sa-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.sa-camera-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #475569;
+    gap: 10px;
+    font-size: 13px;
+}
+
+/* Location Info */
+.sa-location-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary, #64748b);
+    padding: 8px 0;
+    flex-wrap: wrap;
+}
+
+.sa-location-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.sa-location-badge.verified {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.sa-location-badge.denied {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Actions Section */
+.sa-actions-section {
+    background: var(--card-bg, #ffffff);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid var(--border, #e2e8f0);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sa-actions-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary, #1e293b);
+    margin-bottom: 4px;
+}
+
+/* Step Buttons */
+.sa-step-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background 0.2s, transform 0.15s;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.sa-step-btn:active { transform: scale(0.98); }
+.sa-step-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.sa-step-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sa-btn-location { background: #eff6ff; color: #1d4ed8; }
+.sa-btn-location .sa-step-icon { background: #dbeafe; color: #1d4ed8; }
+.sa-btn-location:hover:not(:disabled) { background: #dbeafe; }
+
+.sa-btn-camera { background: #f5f3ff; color: #6d28d9; }
+.sa-btn-camera .sa-step-icon { background: #ede9fe; color: #6d28d9; }
+.sa-btn-camera:hover:not(:disabled) { background: #ede9fe; }
+
+.sa-btn-capture { background: #ecfdf5; color: #065f46; }
+.sa-btn-capture .sa-step-icon { background: #d1fae5; color: #065f46; }
+.sa-btn-capture:hover:not(:disabled) { background: #d1fae5; }
+
+.sa-btn-mark { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+.sa-btn-mark .sa-step-icon { background: rgba(255,255,255,0.2); color: #fff; }
+.sa-btn-mark:hover:not(:disabled) { opacity: 0.9; }
+
+.sa-step-indicator {
+    margin-left: auto;
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.sa-success-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #d1fae5;
+    border-radius: 10px;
+    color: #065f46;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 8px;
+}
