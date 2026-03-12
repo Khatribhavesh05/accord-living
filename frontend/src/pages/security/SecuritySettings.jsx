@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { User, Shield, Bell, Palette } from "lucide-react";
-import PageHeader from "../../components/ui/PageHeader";
-import SettingsTabs from "../../components/ui/SettingsTabs";
-import "./SecuritySettings.css";
-import api from "../../services/api";
+import React, { useState } from 'react';
+import { User, Shield, Bell, Palette } from 'lucide-react';
+import PageHeader from '../../components/ui/PageHeader';
+import SettingsTabs from '../../components/ui/SettingsTabs';
+import './SecuritySettings.css';
 
 const SecuritySettings = () => {
   const [profileData, setProfileData] = useState({
-    name: "",
-    shiftStart: "",
-    shiftEnd: "",
-    contact: "",
+    name: 'Amit Yadav',
+    shiftStart: '08:00',
+    shiftEnd: '20:00',
+    contact: '+91-9876543210',
   });
 
   const [accessControls, setAccessControls] = useState({
@@ -24,45 +23,33 @@ const SecuritySettings = () => {
     nightMode: false,
   });
 
-  useEffect(() => {
-    api
-      .get("/api/security/settings")
-      .then((res) => {
-        const d = res.data || {};
-        if (d.profile) setProfileData(d.profile);
-        if (d.accessControls) setAccessControls(d.accessControls);
-        if (d.alertSettings) setAlertSettings(d.alertSettings);
-      })
-      .catch((err) => console.error("Failed to load settings:", err));
-  }, []);
-
   const handleProfileChange = (key, value) => {
-    setProfileData((prev) => ({ ...prev, [key]: value }));
+    setProfileData(prev => ({ ...prev, [key]: value }));
   };
 
   const handleAccessToggle = (key) => {
-    setAccessControls((prev) => ({ ...prev, [key]: !prev[key] }));
+    setAccessControls(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleAlertToggle = (key) => {
-    setAlertSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+    setAlertSettings(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleSaveProfile = () => {
-    console.log("Profile saved:", profileData);
+    console.log('Profile saved:', profileData);
   };
 
   const handleSaveAccessControls = () => {
-    console.log("Access controls saved:", accessControls);
+    console.log('Access controls saved:', accessControls);
   };
 
   const handleSaveAlerts = () => {
-    console.log("Alert settings saved:", alertSettings);
+    console.log('Alert settings saved:', alertSettings);
   };
 
   const tabs = [
     {
-      label: "Profile",
+      label: 'Profile',
       icon: <User size={18} />,
       content: (
         <div>
@@ -74,7 +61,7 @@ const SecuritySettings = () => {
                 type="text"
                 className="settings-input"
                 value={profileData.name}
-                onChange={(e) => handleProfileChange("name", e.target.value)}
+                onChange={(e) => handleProfileChange('name', e.target.value)}
               />
             </div>
             <div>
@@ -83,7 +70,7 @@ const SecuritySettings = () => {
                 type="tel"
                 className="settings-input"
                 value={profileData.contact}
-                onChange={(e) => handleProfileChange("contact", e.target.value)}
+                onChange={(e) => handleProfileChange('contact', e.target.value)}
               />
             </div>
             <div>
@@ -92,9 +79,7 @@ const SecuritySettings = () => {
                 type="time"
                 className="settings-input"
                 value={profileData.shiftStart}
-                onChange={(e) =>
-                  handleProfileChange("shiftStart", e.target.value)
-                }
+                onChange={(e) => handleProfileChange('shiftStart', e.target.value)}
               />
             </div>
             <div>
@@ -103,17 +88,12 @@ const SecuritySettings = () => {
                 type="time"
                 className="settings-input"
                 value={profileData.shiftEnd}
-                onChange={(e) =>
-                  handleProfileChange("shiftEnd", e.target.value)
-                }
+                onChange={(e) => handleProfileChange('shiftEnd', e.target.value)}
               />
             </div>
           </div>
           <div className="settings-button-group">
-            <button
-              className="settings-button settings-button-primary"
-              onClick={handleSaveProfile}
-            >
+            <button className="settings-button settings-button-primary" onClick={handleSaveProfile}>
               Save Profile
             </button>
             <button className="settings-button settings-button-secondary">
@@ -124,16 +104,14 @@ const SecuritySettings = () => {
       ),
     },
     {
-      label: "Access Controls",
+      label: 'Access Controls',
       icon: <Shield size={18} />,
       content: (
         <div>
           <h2>Gate Access Controls</h2>
           <div className="settings-alert settings-alert-info">
             <span>ℹ️</span>
-            <span>
-              Enable or disable gate entry categories for security operations
-            </span>
+            <span>Enable or disable gate entry categories for security operations</span>
           </div>
           <div className="settings-item">
             <div className="setting-info">
@@ -141,8 +119,8 @@ const SecuritySettings = () => {
               <p>Allow visitor check-in and approvals</p>
             </div>
             <button
-              className={`toggle-switch ${accessControls.visitorEntry ? "active" : ""}`}
-              onClick={() => handleAccessToggle("visitorEntry")}
+              className={`toggle-switch ${accessControls.visitorEntry ? 'active' : ''}`}
+              onClick={() => handleAccessToggle('visitorEntry')}
             >
               <span className="toggle-slider"></span>
             </button>
@@ -153,8 +131,8 @@ const SecuritySettings = () => {
               <p>Allow vehicle entry logs and gate pass</p>
             </div>
             <button
-              className={`toggle-switch ${accessControls.vehicleEntry ? "active" : ""}`}
-              onClick={() => handleAccessToggle("vehicleEntry")}
+              className={`toggle-switch ${accessControls.vehicleEntry ? 'active' : ''}`}
+              onClick={() => handleAccessToggle('vehicleEntry')}
             >
               <span className="toggle-slider"></span>
             </button>
@@ -165,17 +143,14 @@ const SecuritySettings = () => {
               <p>Allow delivery and package logs</p>
             </div>
             <button
-              className={`toggle-switch ${accessControls.deliveryEntry ? "active" : ""}`}
-              onClick={() => handleAccessToggle("deliveryEntry")}
+              className={`toggle-switch ${accessControls.deliveryEntry ? 'active' : ''}`}
+              onClick={() => handleAccessToggle('deliveryEntry')}
             >
               <span className="toggle-slider"></span>
             </button>
           </div>
           <div className="settings-button-group">
-            <button
-              className="settings-button settings-button-primary"
-              onClick={handleSaveAccessControls}
-            >
+            <button className="settings-button settings-button-primary" onClick={handleSaveAccessControls}>
               Save Access Controls
             </button>
           </div>
@@ -183,7 +158,7 @@ const SecuritySettings = () => {
       ),
     },
     {
-      label: "Alerts",
+      label: 'Alerts',
       icon: <Bell size={18} />,
       content: (
         <div>
@@ -194,8 +169,8 @@ const SecuritySettings = () => {
               <p>Play alert sound for emergency notifications</p>
             </div>
             <button
-              className={`toggle-switch ${alertSettings.emergencySound ? "active" : ""}`}
-              onClick={() => handleAlertToggle("emergencySound")}
+              className={`toggle-switch ${alertSettings.emergencySound ? 'active' : ''}`}
+              onClick={() => handleAlertToggle('emergencySound')}
             >
               <span className="toggle-slider"></span>
             </button>
@@ -206,17 +181,14 @@ const SecuritySettings = () => {
               <p>Reduce alert noise and visual intensity at night</p>
             </div>
             <button
-              className={`toggle-switch ${alertSettings.nightMode ? "active" : ""}`}
-              onClick={() => handleAlertToggle("nightMode")}
+              className={`toggle-switch ${alertSettings.nightMode ? 'active' : ''}`}
+              onClick={() => handleAlertToggle('nightMode')}
             >
               <span className="toggle-slider"></span>
             </button>
           </div>
           <div className="settings-button-group">
-            <button
-              className="settings-button settings-button-primary"
-              onClick={handleSaveAlerts}
-            >
+            <button className="settings-button settings-button-primary" onClick={handleSaveAlerts}>
               Save Alert Settings
             </button>
           </div>
@@ -224,7 +196,7 @@ const SecuritySettings = () => {
       ),
     },
     {
-      label: "Appearance",
+      label: 'Appearance',
       icon: <Palette size={18} />,
     },
   ];

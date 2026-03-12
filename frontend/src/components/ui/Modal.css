@@ -9,12 +9,7 @@
   z-index: 1000;
   align-items: center;
   justify-content: center;
-<<<<<<< HEAD
   padding: 20px;
-=======
-  padding: 16px;
-  animation: overlayFadeIn 0.2s ease;
->>>>>>> 6eb47e31e63a89bdd20e5de1af2183e3c3c4e38f
 }
 
 .modal-overlay[style*="display: flex"],
@@ -23,8 +18,8 @@
 }
 
 .modal {
-  background: var(--surface);
-  border-radius: var(--radius-md);
+  background: var(--card);
+  border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   border: 1px solid var(--border);
   max-height: 90vh;
@@ -64,7 +59,7 @@
   justify-content: space-between;
   padding: 24px;
   border-bottom: 1px solid var(--border);
-  background: var(--background);
+  background: var(--hover-bg);
 }
 
 .modal-header h2 {
@@ -81,7 +76,7 @@
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
@@ -90,7 +85,7 @@
 
 .modal-close:hover {
   background: rgba(79, 70, 229, 0.1);
-  color: var(--primary);
+  color: #4F46E5;
 }
 
 .modal-body {
@@ -104,16 +99,11 @@
 }
 
 [data-theme="dark"] .modal {
-  background: var(--text-primary);
-  border-color: var(--text-primary);
+  background: #1E293B;
+  border-color: #334155;
 }
 
 [data-theme="dark"] .modal-header {
-<<<<<<< HEAD
   background: #0F172A;
   border-bottom-color: #334155;
-=======
-  background: var(--text-primary);
-  border-bottom-color: var(--text-primary);
->>>>>>> 6eb47e31e63a89bdd20e5de1af2183e3c3c4e38f
 }

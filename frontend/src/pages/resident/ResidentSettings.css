@@ -21,7 +21,7 @@
 .settings-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
+  gap: 20px;
   margin-bottom: 24px;
 }
 
@@ -35,19 +35,19 @@
   align-items: center;
   width: 50px;
   height: 28px;
-  background: var(--background);
+  background: var(--hover-bg);
   border: 2px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
-  padding: 4px;
+  padding: 2px;
   position: relative;
   flex-shrink: 0;
 }
 
 .toggle-switch.active {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: #4F46E5;
+  border-color: #4F46E5;
 }
 
 .toggle-slider {
@@ -68,7 +68,7 @@
 /* Session Info */
 .session-info {
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 8px;
   padding: 0;
   margin: 16px 0;
 }
@@ -109,8 +109,8 @@
 
 .session-badge {
   display: inline-block;
-  padding: 4px 12px;
-  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -118,7 +118,7 @@
 
 .session-badge.active {
   background: rgba(22, 163, 74, 0.15);
-  color: #16a34a;
+  color: #16A34A;
 }
 
 /* Modal Form */
@@ -130,21 +130,21 @@
 
 /* Buttons */
 .settings-button-danger {
-  background: #dc2626;
+  background: #DC2626;
   color: white;
-  border-color: #dc2626;
+  border-color: #DC2626;
 }
 
 .settings-button-danger:hover {
-  background: #b91c1c;
-  border-color: #b91c1c;
+  background: #B91C1C;
+  border-color: #B91C1C;
 }
 
 /* Warning Alert */
 .settings-alert-warning {
   background: rgba(217, 119, 6, 0.1);
-  color: #d97706;
-  border-left-color: #d97706;
+  color: #D97706;
+  border-left-color: #D97706;
 }
 
 /* Responsive Design */
@@ -171,7 +171,4 @@
     align-self: flex-start;
   }
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> 6eb47e31e63a89bdd20e5de1af2183e3c3c4e38f

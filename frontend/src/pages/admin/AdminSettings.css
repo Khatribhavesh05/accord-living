@@ -21,7 +21,7 @@
 .settings-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
+  gap: 20px;
   margin-bottom: 24px;
 }
 
@@ -39,19 +39,19 @@
   align-items: center;
   width: 50px;
   height: 28px;
-  background: var(--background);
+  background: var(--hover-bg);
   border: 2px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
-  padding: 4px;
+  padding: 2px;
   position: relative;
   flex-shrink: 0;
 }
 
 .toggle-switch.active {
-  background: var(--primary);
-  border-color: var(--primary);
+  background: #4F46E5;
+  border-color: #4F46E5;
 }
 
 .toggle-slider {
@@ -73,12 +73,12 @@
 .settings-table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--surface);
+  background: var(--card);
   color: var(--text-primary);
 }
 
 .settings-table thead {
-  background: var(--background);
+  background: var(--hover-bg);
   border-bottom: 2px solid var(--border);
 }
 
@@ -97,7 +97,7 @@
 }
 
 .settings-table tbody tr:hover {
-  background: var(--background);
+  background: var(--hover-bg);
 }
 
 .settings-table tbody tr:last-child td {
@@ -108,7 +108,7 @@
 .expense-table-wrapper,
 .roles-table-wrapper {
   overflow-x: auto;
-  border-radius: var(--radius-md);
+  border-radius: 8px;
   border: 1px solid var(--border);
 }
 
@@ -120,17 +120,17 @@
   width: 32px;
   height: 32px;
   border: 1px solid var(--border);
-  background: var(--background);
+  background: var(--hover-bg);
   color: var(--text-secondary);
-  border-radius: var(--radius-md);
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
   margin-right: 8px;
 }
 
 .action-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: #4F46E5;
+  color: #4F46E5;
 }
 
 .action-btn.edit-btn:hover {
@@ -138,20 +138,20 @@
 }
 
 .action-btn.delete-btn {
-  color: #dc2626;
-  border-color: #dc2626;
+  color: #DC2626;
+  border-color: #DC2626;
 }
 
 .action-btn.delete-btn:hover {
   background: rgba(220, 38, 38, 0.1);
-  color: #dc2626;
+  color: #DC2626;
 }
 
 /* Role Badges */
 .role-badge {
   display: inline-block;
   padding: 4px 12px;
-  border-radius: var(--radius-md);
+  border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -159,17 +159,17 @@
 
 .role-admin {
   background: rgba(79, 70, 229, 0.15);
-  color: var(--primary);
+  color: #4F46E5;
 }
 
 .role-treasurer {
   background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
+  color: #10B981;
 }
 
 .role-secretary {
   background: rgba(59, 130, 246, 0.15);
-  color: var(--primary);
+  color: #3B82F6;
 }
 
 /* Reports Section */
@@ -200,8 +200,8 @@
   gap: 8px;
   padding: 16px;
   border: 2px solid var(--border);
-  background: var(--background);
-  border-radius: var(--radius-md);
+  background: var(--hover-bg);
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text-primary);
@@ -210,9 +210,9 @@
 }
 
 .report-btn:hover {
-  border-color: var(--primary);
+  border-color: #4F46E5;
   background: rgba(79, 70, 229, 0.1);
-  color: var(--primary);
+  color: #4F46E5;
 }
 
 .report-btn svg {
@@ -251,7 +251,7 @@
 
   .settings-table th,
   .settings-table td {
-    padding: 8px;
+    padding: 10px;
   }
 
   .action-btn {
@@ -259,3 +259,4 @@
     height: 28px;
   }
 }
+
