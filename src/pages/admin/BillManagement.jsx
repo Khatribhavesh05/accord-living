@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader, Card, StatusBadge, Button, StatCard } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { subscribeToAllBills, subscribeBillingStats, generateBill, deleteBill } from '../../firebase/billService';
+import { subscribeToFlats } from '../../firebase/flatService';
 import Modal from '../../components/ui/Modal';
 import { useAuth } from '../../context/AuthContext';
 import { Trash2, Eye } from 'lucide-react';
@@ -12,6 +13,7 @@ const BillManagement = () => {
     const { user } = useAuth();
     const societyId = user?.societyId;
     const [bills, setBills] = useState([]);
+    const [flats, setFlats] = useState([]);
     const [stats, setStats] = useState({
         totalBilled: 0,
         totalCollected: 0,
@@ -28,24 +30,27 @@ const BillManagement = () => {
         billYear: new Date().getFullYear(),
         totalAmount: '',
         dueDate: '',
-        description: ''
+        description: '',
+        targetFlat: 'all',
     });
 
-    // Subscribe to all bills and stats
+    // Subscribe to all bills, stats, and flats
     useEffect(() => {
         if (!societyId) return;
         const unsubBills = subscribeToAllBills(societyId, (data) => {
             setBills(data);
             setLoading(false);
         });
-        
         const unsubStats = subscribeBillingStats(societyId, (statsData) => {
             setStats(statsData);
         });
-        
+        const unsubFlats = subscribeToFlats(societyId, (flatList) => {
+            setFlats(flatList);
+        });
         return () => {
             unsubBills();
             unsubStats();
+            unsubFlats();
         };
     }, [societyId]);
 
@@ -55,7 +60,6 @@ const BillManagement = () => {
             toast.error('Please fill all required fields', 'Error');
             return;
         }
-
         setIsGenerating(true);
         try {
             await generateBill({
@@ -64,17 +68,20 @@ const BillManagement = () => {
                 totalAmount: parseInt(form.totalAmount),
                 dueDate: form.dueDate,
                 description: form.description,
+                flatNumber: form.targetFlat,
                 payments: [],
                 societyId,
             });
-            toast.success(`Bill for ${form.billMonth}/${form.billYear} generated successfully!`, 'Bill Created');
+            const targetLabel = form.targetFlat === 'all' ? 'All Flats' : `Flat ${form.targetFlat}`;
+            toast.success(`Bill for ${targetLabel} (${form.billMonth}/${form.billYear}) generated!`, 'Bill Created');
             setModalOpen(false);
             setForm({ 
                 billMonth: new Date().toLocaleString('en-US', { month: '2-digit' }),
                 billYear: new Date().getFullYear(),
                 totalAmount: '',
                 dueDate: '',
-                description: ''
+                description: '',
+                targetFlat: 'all',
             });
         } catch (err) {
             toast.error('Failed to generate bill', 'Error');
@@ -97,12 +104,14 @@ const BillManagement = () => {
 
     const getCollectionStats = (bill) => {
         const payments = bill.payments || [];
-        const totalCollected = payments.filter(p => p.status === 'Paid').length;
-        const totalResidents = Number(bill.totalResidents || 0);
+        const paidCount = payments.filter(p => p.status === 'Paid').length;
+        const totalTarget = bill.flatNumber && bill.flatNumber !== 'all'
+            ? 1
+            : Math.max(flats.length, paidCount);
         return {
-            collected: totalCollected,
-            total: totalResidents,
-            percentage: totalResidents > 0 ? Math.round((totalCollected / totalResidents) * 100) : 0
+            collected: paidCount,
+            total: totalTarget,
+            percentage: totalTarget > 0 ? Math.round((paidCount / totalTarget) * 100) : 0
         };
     };
 
@@ -148,15 +157,14 @@ const BillManagement = () => {
                 {loading ? (
                     <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Loading bills...</div>
                 ) : bills.length === 0 ? (
-                    <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-                        No payments yet
-                    </div>
+                    <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>No payments yet</div>
                 ) : (
                     <div style={{ overflowX: 'auto' }}>
                         <table className="bill-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
                                     <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px' }}>Period</th>
+                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px' }}>Flat</th>
                                     <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px' }}>Total Amount</th>
                                     <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px' }}>Collections</th>
                                     <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px' }}>Status</th>
@@ -171,18 +179,16 @@ const BillManagement = () => {
                                             <td style={{ padding: '16px', fontWeight: '500', color: 'var(--text-primary)' }}>
                                                 {bill.billMonth}/{bill.billYear}
                                             </td>
+                                            <td style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                                                {bill.flatNumber && bill.flatNumber !== 'all' ? `Flat ${bill.flatNumber}` : 'All Flats'}
+                                            </td>
                                             <td style={{ padding: '16px', fontFamily: 'monospace', fontWeight: 'bold' }}>
                                                 ₹{bill.totalAmount.toLocaleString()}
                                             </td>
                                             <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                     <div style={{ flex: 1, height: '6px', background: 'var(--bg-light)', borderRadius: '3px', maxWidth: '100px' }}>
-                                                        <div style={{ 
-                                                            width: `${collStats.percentage}%`, 
-                                                            height: '100%', 
-                                                            background: 'var(--brand-blue)', 
-                                                            borderRadius: '3px' 
-                                                        }}></div>
+                                                        <div style={{ width: `${collStats.percentage}%`, height: '100%', background: 'var(--brand-blue)', borderRadius: '3px' }}></div>
                                                     </div>
                                                     <span style={{ fontSize: '12px', minWidth: '40px' }}>{collStats.percentage}%</span>
                                                 </div>
@@ -192,38 +198,10 @@ const BillManagement = () => {
                                             </td>
                                             <td style={{ padding: '16px' }}>
                                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                                    <button 
-                                                        onClick={() => setViewModal(bill)}
-                                                        style={{
-                                                            background: '#eff6ff',
-                                                            border: 'none',
-                                                            cursor: 'pointer',
-                                                            padding: '6px',
-                                                            borderRadius: '4px',
-                                                            color: '#3b82f6',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            transition: 'background 0.2s'
-                                                        }}
-                                                        title="View Details"
-                                                    >
+                                                    <button onClick={() => setViewModal(bill)} style={{ background: '#eff6ff', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '4px', color: '#3b82f6', display: 'flex', alignItems: 'center', transition: 'background 0.2s' }} title="View Details">
                                                         <Eye size={16} />
                                                     </button>
-                                                    <button 
-                                                        onClick={() => handleDelete(bill.id)}
-                                                        style={{
-                                                            background: '#fef2f2',
-                                                            border: 'none',
-                                                            cursor: 'pointer',
-                                                            padding: '6px',
-                                                            borderRadius: '4px',
-                                                            color: '#ef4444',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            transition: 'background 0.2s'
-                                                        }}
-                                                        title="Delete"
-                                                    >
+                                                    <button onClick={() => handleDelete(bill.id)} style={{ background: '#fef2f2', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '4px', color: '#ef4444', display: 'flex', alignItems: 'center', transition: 'background 0.2s' }} title="Delete">
                                                         <Trash2 size={16} />
                                                     </button>
                                                 </div>
@@ -241,12 +219,17 @@ const BillManagement = () => {
             <Modal isOpen={modalOpen} title="Generate New Bill" onClose={() => setModalOpen(false)}>
                 <form className="modal-form" onSubmit={handleGenerate}>
                     <div className="form-group">
+                        <label>Target Flat</label>
+                        <select value={form.targetFlat} onChange={e => setForm({ ...form, targetFlat: e.target.value })}>
+                            <option value="all">All Flats</option>
+                            {flats.map(f => (
+                                <option key={f.id} value={f.flatNumber}>Flat {f.flatNumber}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
                         <label>Billing Month</label>
-                        <select 
-                            value={form.billMonth} 
-                            onChange={e => setForm({ ...form, billMonth: e.target.value })} 
-                            required
-                        >
+                        <select value={form.billMonth} onChange={e => setForm({ ...form, billMonth: e.target.value })} required>
                             <option value="01">January</option>
                             <option value="02">February</option>
                             <option value="03">March</option>
@@ -263,41 +246,19 @@ const BillManagement = () => {
                     </div>
                     <div className="form-group">
                         <label>Billing Year</label>
-                        <input 
-                            type="number" 
-                            value={form.billYear}
-                            onChange={e => setForm({ ...form, billYear: parseInt(e.target.value) })}
-                            required 
-                        />
+                        <input type="number" value={form.billYear} onChange={e => setForm({ ...form, billYear: parseInt(e.target.value) })} required />
                     </div>
                     <div className="form-group">
                         <label>Total Amount (₹)</label>
-                        <input 
-                            type="number" 
-                            value={form.totalAmount}
-                            onChange={e => setForm({ ...form, totalAmount: e.target.value })}
-                            placeholder="e.g. 450000" 
-                            required 
-                        />
+                        <input type="number" value={form.totalAmount} onChange={e => setForm({ ...form, totalAmount: e.target.value })} placeholder="e.g. 5000" required />
                     </div>
                     <div className="form-group">
                         <label>Due Date</label>
-                        <input 
-                            type="text" 
-                            value={form.dueDate}
-                            onChange={e => setForm({ ...form, dueDate: e.target.value })}
-                            placeholder="e.g. 10 Mar 2026" 
-                            required 
-                        />
+                        <input type="text" value={form.dueDate} onChange={e => setForm({ ...form, dueDate: e.target.value })} placeholder="e.g. 10 Mar 2026" required />
                     </div>
                     <div className="form-group">
                         <label>Description (Optional)</label>
-                        <textarea 
-                            value={form.description}
-                            onChange={e => setForm({ ...form, description: e.target.value })}
-                            placeholder="e.g. Monthly maintenance + utilities"
-                            rows="3"
-                        />
+                        <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="e.g. Monthly maintenance + utilities" rows="3" />
                     </div>
                     <div className="modal-actions">
                         <Button variant="secondary" type="button" onClick={() => setModalOpen(false)}>Cancel</Button>
@@ -310,39 +271,63 @@ const BillManagement = () => {
 
             {/* View Bill Details Modal */}
             <Modal isOpen={!!viewModal} title={`Bill Details — ${viewModal?.billMonth}/${viewModal?.billYear}`} onClose={() => setViewModal(null)}>
-                {viewModal && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Period</label>
-                                <p style={{ margin: 0, color: '#111827', fontWeight: '500' }}>{viewModal.billMonth}/{viewModal.billYear}</p>
+                {viewModal && (() => {
+                    const collStats = getCollectionStats(viewModal);
+                    return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Period</label>
+                                    <p style={{ margin: 0, color: '#111827', fontWeight: '500' }}>{viewModal.billMonth}/{viewModal.billYear}</p>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Amount</label>
+                                    <p style={{ margin: 0, color: '#111827', fontWeight: '700', fontSize: '16px' }}>₹{viewModal.totalAmount.toLocaleString()}</p>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Due Date</label>
+                                    <p style={{ margin: 0, color: '#111827', fontWeight: '500' }}>{viewModal.dueDate}</p>
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target</label>
+                                    <p style={{ margin: 0, color: '#111827', fontWeight: '500' }}>
+                                        {viewModal.flatNumber && viewModal.flatNumber !== 'all' ? `Flat ${viewModal.flatNumber}` : 'All Flats'}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Amount</label>
-                                <p style={{ margin: 0, color: '#111827', fontWeight: '700', fontSize: '16px' }}>₹{viewModal.totalAmount.toLocaleString()}</p>
+                            {viewModal.description && (
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Description</label>
+                                    <p style={{ margin: 0, color: '#4b5563' }}>{viewModal.description}</p>
+                                </div>
+                            )}
+                            <div style={{ backgroundColor: '#f0f9ff', padding: '12px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                                <p style={{ margin: 0, fontSize: '13px', color: '#1e40af' }}>
+                                    <strong>{collStats.collected}</strong> out of <strong>{collStats.total}</strong> resident{collStats.total !== 1 ? 's' : ''} have paid — <strong>{collStats.percentage}%</strong> collected
+                                </p>
                             </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Due Date</label>
-                                <p style={{ margin: 0, color: '#111827', fontWeight: '500' }}>{viewModal.dueDate}</p>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Collections</label>
-                                <p style={{ margin: 0, color: '#111827', fontWeight: '500' }}>{getCollectionStats(viewModal).percentage}%</p>
-                            </div>
+                            {(viewModal.payments || []).length > 0 && (
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Payment Records</label>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                                        {viewModal.payments.map((p, i) => (
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#f9fafb', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+                                                <div>
+                                                    <div style={{ fontWeight: '500', fontSize: '13px', color: '#111827' }}>{p.residentName || 'Resident'}</div>
+                                                    <div style={{ fontSize: '11px', color: '#6b7280' }}>Flat {p.residentFlat || 'N/A'}</div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontWeight: '600', fontSize: '13px', color: '#059669' }}>₹{(p.amount || 0).toLocaleString()}</div>
+                                                    <div style={{ fontSize: '11px', color: '#6b7280' }}>{p.paidDate || '-'}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        {viewModal.description && (
-                            <div>
-                                <label style={{ display: 'block', fontSize: '11px', color: '#6b7280', fontWeight: '600', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Description</label>
-                                <p style={{ margin: 0, color: '#4b5563' }}>{viewModal.description}</p>
-                            </div>
-                        )}
-                        <div style={{ backgroundColor: '#f0f9ff', padding: '12px', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
-                            <p style={{ margin: 0, fontSize: '13px', color: '#1e40af' }}>
-                                <strong>{getCollectionStats(viewModal).collected}</strong> out of <strong>{getCollectionStats(viewModal).total}</strong> residents have paid
-                            </p>
-                        </div>
-                    </div>
-                )}
+                    );
+                })()}
             </Modal>
         </>
     );

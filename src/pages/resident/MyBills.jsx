@@ -3,6 +3,7 @@ import { Card, PageHeader, Button, StatusBadge } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { subscribeToResidentBills, recordPayment } from '../../firebase/billService';
+import { downloadInvoice } from '../../utils/invoiceGenerator';
 import Modal from '../../components/ui/Modal.jsx';
 import './MyBills.css';
 
@@ -15,15 +16,15 @@ const MyBills = () => {
     const [isPaying, setIsPaying] = useState(false);
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
 
-    // Subscribe to resident's bills
+    // Subscribe to resident's bills (filtered by flat)
     useEffect(() => {
         if (!user?.uid || !user?.societyId) return;
         const unsub = subscribeToResidentBills(user.uid, user.societyId, (data) => {
             setBills(data);
             setLoading(false);
-        });
+        }, user.flatNumber);
         return () => unsub();
-    }, [user?.uid, user?.societyId]);
+    }, [user?.uid, user?.societyId, user?.flatNumber]);
 
     // Get the current bill (latest pending or first from list)
     const currentBill = bills.find(b => b.paymentStatus === 'Pending') || bills[0] || null;
@@ -123,7 +124,7 @@ const MyBills = () => {
                             <Button onClick={() => setSelectedBill(currentBill)} disabled={currentBill.paymentStatus === 'Paid'}>
                                 {currentBill.paymentStatus === 'Paid' ? '✓ Paid' : 'Pay Now'}
                             </Button>
-                            <Button variant="secondary">Download Invoice</Button>
+                            <Button variant="secondary" onClick={() => downloadInvoice(currentBill, user?.name, user?.flatNumber)}>Download Invoice</Button>
                         </div>
                     </div>
 

@@ -51,17 +51,19 @@ export const subscribeToAllBills = (societyId, callback) => {
 };
 
 /**
- * Get resident's bills with their payment status
+ * Get resident's bills with their payment status.
+ * Shows bills targeted at their specific flat OR all flats.
  * @param {string} residentUid - Firebase UID of logged-in resident
  * @param {string} societyId - resident's society ID
  * @param {function} callback - called with array of bills
+ * @param {string} [flatNumber] - resident's flat number (for flat-specific filtering)
  */
-export const subscribeToResidentBills = (residentUid, societyId, callback) => {
+export const subscribeToResidentBills = (residentUid, societyId, callback, flatNumber) => {
     const q = societyId
         ? query(collection(db, COLLECTION), where('societyId', '==', societyId))
         : query(collection(db, COLLECTION));
     return onSnapshot(q, (snapshot) => {
-        const items = snapshot.docs.map((d) => {
+        let items = snapshot.docs.map((d) => {
             const data = d.data();
             const ts = data.createdAt;
             const displayDate = ts
@@ -80,6 +82,14 @@ export const subscribeToResidentBills = (residentUid, societyId, callback) => {
                 paymentStatus: residentPayment?.status || 'Pending'
             };
         });
+
+        // Filter: show only bills targeted at this resident's flat or 'all' flats
+        if (flatNumber) {
+            items = items.filter(bill => 
+                !bill.flatNumber || bill.flatNumber === 'all' || bill.flatNumber === flatNumber
+            );
+        }
+
         items.sort((a, b) => {
             const at = a.createdAt?.toDate?.()?.getTime?.() || 0;
             const bt = b.createdAt?.toDate?.()?.getTime?.() || 0;
