@@ -4,6 +4,7 @@ import NotificationPanel from '../components/ui/NotificationPanel';
 import { useToast } from '../components/ui/Toast';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { subscribeToSociety } from '../firebase/societyService';
 import '../styles/admin-style.css';
 import {
     LayoutDashboard, Receipt, CreditCard, History, MessageSquare,
@@ -14,11 +15,12 @@ import {
 const ResidentLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth > 768 : true));
     const [profileOpen, setProfileOpen] = useState(false);
+    const [societyName, setSocietyName] = useState('CIVIORA');
     const navigate = useNavigate();
     const location = useLocation();
     const toast = useToast();
     const { isDarkMode, toggleDarkMode } = useTheme();
-    const { signOut } = useAuth();
+    const { signOut, user } = useAuth();
 
     useEffect(() => {
         const handleResize = () => {
@@ -32,6 +34,17 @@ const ResidentLayout = () => {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    useEffect(() => {
+        if (!user?.societyId) {
+            setSocietyName(user?.societyName || 'CIVIORA');
+            return () => {};
+        }
+
+        return subscribeToSociety(user.societyId, (society) => {
+            setSocietyName(society?.name || user?.societyName || 'CIVIORA');
+        });
+    }, [user?.societyId, user?.societyName]);
 
     const handleLogout = async (e) => {
         e.preventDefault();
@@ -76,7 +89,10 @@ const ResidentLayout = () => {
                             <div className="brand-icon resident-brand-icon">
                                 <Building size={16} />
                             </div>
-                            <h2 id="societyName">CIVIORA</h2>
+                            <div className="brand-copy">
+                                <h2 id="societyName">{societyName}</h2>
+                                <span className="brand-meta">CIVIORA Resident</span>
+                            </div>
                         </div>
                         <div className="mobile-close-btn" onClick={() => setSidebarOpen(false)}>
                             <X size={20} color="var(--sidebar-muted)" />
@@ -133,6 +149,7 @@ const ResidentLayout = () => {
                         <div className="breadcrumbs">
                             Resident <span>/</span> <span>{currentBreadcrumb}</span>
                         </div>
+                        <div className="society-pill">{societyName}</div>
                     </div>
 
                     <div className="topbar-right">

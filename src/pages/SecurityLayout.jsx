@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import NotificationPanel from '../components/ui/NotificationPanel';
 import { useToast } from '../components/ui/Toast';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { subscribeToSociety } from '../firebase/societyService';
 import '../styles/admin-style.css';
 import {
     ShieldCheck, Users, Car, Package, Phone, Search,
@@ -14,11 +15,23 @@ import {
 const SecurityLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [profileOpen, setProfileOpen] = useState(false);
+    const [societyName, setSocietyName] = useState('CIVIORA');
     const navigate = useNavigate();
     const location = useLocation();
     const toast = useToast();
     const { isDarkMode, toggleDarkMode } = useTheme();
-    const { signOut } = useAuth();
+    const { signOut, user } = useAuth();
+
+    useEffect(() => {
+        if (!user?.societyId) {
+            setSocietyName(user?.societyName || 'CIVIORA');
+            return () => {};
+        }
+
+        return subscribeToSociety(user.societyId, (society) => {
+            setSocietyName(society?.name || user?.societyName || 'CIVIORA');
+        });
+    }, [user?.societyId, user?.societyName]);
 
     const handleLogout = async (e) => {
         e.preventDefault();
@@ -56,7 +69,10 @@ const SecurityLayout = () => {
                             <div className="brand-icon" style={{ background: 'linear-gradient(135deg, #1E40AF, #3B82F6)' }}>
                                 <ShieldCheck size={16} />
                             </div>
-                            <h2 id="societyName">CIVIORA</h2>
+                            <div className="brand-copy">
+                                <h2 id="societyName">{societyName}</h2>
+                                <span className="brand-meta">CIVIORA Security</span>
+                            </div>
                         </div>
                         <div className="mobile-close-btn" style={{ display: 'none' }} onClick={() => setSidebarOpen(false)}>
                             <X size={20} color="var(--sidebar-muted)" />
@@ -116,6 +132,7 @@ const SecurityLayout = () => {
                         <div className="breadcrumbs">
                             Security <span>/</span> <span>{currentBreadcrumb}</span>
                         </div>
+                        <div className="society-pill">{societyName}</div>
                     </div>
 
                     <div className="topbar-right">

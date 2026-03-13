@@ -10,16 +10,18 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { subscribeToSociety } from '../firebase/societyService';
 import '../styles/admin-style.css';
 
 const AdminLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth > 768 : true));
     const [profileOpen, setProfileOpen] = useState(false);
+    const [societyName, setSocietyName] = useState('CIVIORA');
     const navigate = useNavigate();
     const location = useLocation();
     const toast = useToast();
     const { isDarkMode, toggleDarkMode } = useTheme();
-    const { signOut } = useAuth();
+    const { signOut, user } = useAuth();
 
     useEffect(() => {
         const handleResize = () => {
@@ -33,6 +35,17 @@ const AdminLayout = () => {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    useEffect(() => {
+        if (!user?.societyId) {
+            setSocietyName(user?.societyName || 'CIVIORA');
+            return () => {};
+        }
+
+        return subscribeToSociety(user.societyId, (society) => {
+            setSocietyName(society?.name || user?.societyName || 'CIVIORA');
+        });
+    }, [user?.societyId, user?.societyName]);
 
     const handleLogout = async (e) => {
         e.preventDefault();
@@ -89,7 +102,10 @@ const AdminLayout = () => {
                             <div className="brand-icon">
                                 <Building size={16} />
                             </div>
-                            <h2 id="societyName">CIVIORA</h2>
+                            <div className="brand-copy">
+                                <h2 id="societyName">{societyName}</h2>
+                                <span className="brand-meta">CIVIORA Admin</span>
+                            </div>
                         </div>
                         {/* Mobile close button inside brand header */}
                         <div className="mobile-close-btn" onClick={() => setSidebarOpen(false)}>
@@ -159,6 +175,7 @@ const AdminLayout = () => {
                         <div className="breadcrumbs">
                             Admin <span>/</span> <span>{currentBreadcrumb}</span>
                         </div>
+                        <div className="society-pill">{societyName}</div>
                     </div>
 
                     <div className="topbar-right">

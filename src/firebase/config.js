@@ -37,5 +37,5 @@ if (hasRequiredFirebaseConfig && hasValidApiKeyFormat) {
   console.warn('Firebase config is missing or invalid. Add VITE_FIREBASE_* values in your .env file.');
 }
 
-export { auth, db };
+export { auth, db, firebaseConfig };
 export default app;

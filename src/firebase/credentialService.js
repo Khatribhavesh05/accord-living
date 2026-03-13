@@ -1,6 +1,8 @@
-import { auth, db } from './config';
+import { deleteApp, initializeApp } from 'firebase/app';
 import {
   createUserWithEmailAndPassword,
+  getAuth,
+  signOut as signOutAuth,
 } from 'firebase/auth';
 import {
   collection,
@@ -11,7 +13,7 @@ import {
   where,
   serverTimestamp,
 } from 'firebase/firestore';
-import { updateUserProfile } from './userService';
+import { auth, db, firebaseConfig } from './config';
 
 const USERS_COLLECTION = 'users';
 
@@ -28,6 +30,23 @@ const generateTempPassword = () => {
   }
   // Shuffle
   return pass.split('').sort(() => Math.random() - 0.5).join('');
+};
+
+const createUserWithoutSwitchingSession = async (email, password) => {
+  if (!auth?.currentUser) {
+    return createUserWithEmailAndPassword(auth, email, password);
+  }
+
+  const secondaryApp = initializeApp(firebaseConfig, `secondary-auth-${Date.now()}`);
+  const secondaryAuth = getAuth(secondaryApp);
+
+  try {
+    const credential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+    await signOutAuth(secondaryAuth);
+    return credential;
+  } finally {
+    await deleteApp(secondaryApp);
+  }
 };
 
 /**
@@ -58,8 +77,8 @@ export const generateCredential = async ({
   const tempPassword = password || generateTempPassword();
   const trimmedEmail = email.trim().toLowerCase();
 
-  // Create Firebase Auth user
-  const credential = await createUserWithEmailAndPassword(auth, trimmedEmail, tempPassword);
+  // Preserve the logged-in admin session while onboarding residents and staff.
+  const credential = await createUserWithoutSwitchingSession(trimmedEmail, tempPassword);
   const uid = credential.user.uid;
 
   // Write user profile doc

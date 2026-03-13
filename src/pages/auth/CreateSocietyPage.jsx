@@ -17,11 +17,11 @@ const CreateSocietyPage = () => {
     const [errorMsg, setErrorMsg] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
-    const { user, signIn } = useAuth();
+    const { user } = useAuth();
 
     useEffect(() => {
         if (user?.role === 'admin') {
-            navigate('/admin/dashboard', { replace: true });
+            navigate('/admin/onboarding', { replace: true });
         }
     }, [user, navigate]);
 
@@ -70,13 +70,13 @@ const CreateSocietyPage = () => {
             });
 
             // 3. Update admin user doc with the real societyId
-            await updateUserProfile(uid, { societyId });
+            await updateUserProfile(uid, {
+                societyId,
+                societyName: form.societyName.trim(),
+            });
 
-            // 4. Sign in as admin
-            const { error } = await signIn(form.adminEmail.trim(), form.password);
-            if (error) throw new Error(error.message);
-
-            // 5. Redirect to onboarding
+            // 4. Redirect to onboarding.
+            // The admin is already signed in by the account creation step.
             navigate('/admin/onboarding', { replace: true });
         } catch (err) {
             const msg = err.message || '';

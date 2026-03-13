@@ -195,6 +195,12 @@ h6 {
     gap: 10px;
 }
 
+.sidebar-brand-content .brand-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 .sidebar-brand-content .brand-icon {
     width: 30px;
     height: 30px;
@@ -212,6 +218,17 @@ h6 {
     font-weight: 700;
     letter-spacing: -0.3px;
     color: #FFF;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+}
+
+.brand-meta {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.62);
 }
 
 /* Navigation Groups */
@@ -409,6 +426,30 @@ h6 {
     display: flex;
     align-items: center;
     gap: 12px;
+    min-width: 0;
+}
+
+.society-pill {
+    display: inline-flex;
+    align-items: center;
+    max-width: 260px;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--brand-light);
+    color: var(--brand-blue);
+    border: 1px solid rgba(79, 70, 229, 0.12);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+[data-theme='dark'] .society-pill {
+    background: rgba(99, 102, 241, 0.12);
+    color: #C7D2FE;
+    border-color: rgba(129, 140, 248, 0.22);
 }
 
 .btn-icon {
@@ -701,6 +742,10 @@ h6 {
     .topbar-right {
         width: 100%;
         justify-content: space-between;
+    }
+
+    .society-pill {
+        max-width: 100%;
     }
 
     .breadcrumbs {

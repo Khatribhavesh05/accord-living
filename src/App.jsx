@@ -32,6 +32,7 @@ function App() {
                             <Route path="/" element={<LandingPage />} />
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/signup/create-society" element={<CreateSocietyPage />} />
+                            <Route path="/admin/onboarding" element={<OnboardingDashboard />} />
 
                             {/* Legacy redirects */}
                             <Route path="/admin-dashboard" element={<Navigate to="/admin/dashboard" replace />} />
@@ -39,7 +40,6 @@ function App() {
                             <Route path="/security-dashboard" element={<Navigate to="/security/dashboard" replace />} />
                             <Route path="/admin" element={<AdminLayout />}>
                                 <Route index element={<Navigate to="dashboard" replace />} />
-                                <Route path="onboarding" element={<OnboardingDashboard />} />
                                 <Route path="dashboard" element={<AdminPages.AdminDashboard />} />
                                 <Route path="residents" element={<AdminPages.ResidentManagement />} />
                                 <Route path="maintenance" element={<AdminPages.BillManagement />} />
