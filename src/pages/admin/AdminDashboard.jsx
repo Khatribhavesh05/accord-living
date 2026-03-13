@@ -81,6 +81,7 @@ const AdminDashboard = () => {
     const [openComplaints, setOpenComplaints] = useState(0);
     const [presentStaff, setPresentStaff] = useState(0);
     const [activeAlerts, setActiveAlerts] = useState(0);
+    const [firestoreError, setFirestoreError] = useState(null);
 
     useEffect(() => {
         const timeoutId = setTimeout(() => setIsLoading(false), 800);
@@ -88,12 +89,20 @@ const AdminDashboard = () => {
     }, []);
 
     useEffect(() => {
+        const handleFirestoreError = (err) => {
+            if (err?.code === 'permission-denied') {
+                setFirestoreError('Firestore rules are blocking data reads. Go to Firebase Console → Firestore → Rules → publish the open rules.');
+            } else {
+                setFirestoreError(`Firestore error: ${err?.message || err?.code || 'Unknown'}`);
+            }
+        };
+
         const unsubFlats = subscribeToFlats(societyId, (items) => {
             setFlatCount(items.length);
-        });
+        }, handleFirestoreError);
         const unsubResidents = subscribeToResidents(societyId, (items) => {
             setResidentCount(items.length);
-        });
+        }, handleFirestoreError);
         const unsubBills = subscribeBillingStats(societyId, (stats) => {
             setCollectionStats(stats);
         });
@@ -187,6 +196,19 @@ const AdminDashboard = () => {
 
     return (
         <div className="admin-dashboard-sa">
+            {firestoreError && (
+                <div style={{
+                    background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8,
+                    padding: '12px 16px', marginBottom: 16, color: '#dc2626',
+                    fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 8
+                }}>
+                    <span style={{ fontSize: 16 }}>⚠️</span>
+                    <div>
+                        <strong>Data not loading</strong><br />
+                        {firestoreError}
+                    </div>
+                </div>
+            )}
             <motion.div
                 className="admin-dashboard-head"
                 initial={{ opacity: 0, y: 10 }}

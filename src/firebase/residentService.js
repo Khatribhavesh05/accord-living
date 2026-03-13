@@ -47,7 +47,7 @@ export const deleteResident = (id) => {
   return deleteDoc(doc(db, COLLECTION, id));
 };
 
-export const subscribeToResidents = (societyId, callback) => {
+export const subscribeToResidents = (societyId, callback, onError) => {
   const q = societyId
     ? query(collection(db, COLLECTION), where('societyId', '==', societyId))
     : query(collection(db, COLLECTION));
@@ -60,6 +60,7 @@ export const subscribeToResidents = (societyId, callback) => {
     },
     (error) => {
       console.error('[Firestore Error] subscribeToResidents:', error);
+      if (onError) onError(error);
       callback([]);
     },
   );
