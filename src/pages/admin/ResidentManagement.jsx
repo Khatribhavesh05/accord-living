@@ -3,6 +3,7 @@ import { PageHeader, Card, StatusBadge, Button } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import Modal from '../../components/ui/Modal';
 import { useAuth } from '../../context/AuthContext';
+import { generateCredential } from '../../firebase/credentialService';
 import {
     subscribeToResidents,
     createResident,
@@ -12,6 +13,7 @@ import {
     assignResidentToFlat,
     subscribeToFlats,
 } from '../../firebase/flatService';
+import { updateUserProfile } from '../../firebase/userService';
 
 const ResidentManagement = () => {
     const toast = useToast();
@@ -23,6 +25,7 @@ const ResidentManagement = () => {
 
     const [modalOpen, setModalOpen] = useState(false);
     const [editingResident, setEditingResident] = useState(null);
+    const [generatedCredential, setGeneratedCredential] = useState(null);
     const [form, setForm] = useState({ name: '', flat: '', email: '', phone: '', status: 'Active' });
 
     const openAddModal = () => {
@@ -51,21 +54,64 @@ const ResidentManagement = () => {
         e.preventDefault();
         try {
             if (editingResident) {
-                await updateResident(editingResident.id, form);
-                const selectedFlat = flats.find((flat) => String(flat.flatNumber) === String(form.flat));
-                if (selectedFlat) {
-                    await assignResidentToFlat(selectedFlat.id, editingResident.id, form.name);
+                let residentUid = editingResident.uid || null;
+
+                if (!residentUid) {
+                    const issued = await generateCredential({
+                        societyId,
+                        email: form.email,
+                        role: 'resident',
+                        flatNumber: form.flat,
+                        name: form.name,
+                    });
+                    residentUid = issued.uid;
+                    setGeneratedCredential({
+                        name: form.name,
+                        email: issued.email,
+                        tempPassword: issued.tempPassword,
+                        flat: form.flat,
+                    });
+                } else {
+                    await updateUserProfile(residentUid, {
+                        name: form.name,
+                        email: form.email,
+                        flatNumber: form.flat,
+                        societyId,
+                    });
                 }
-                toast.success(`${form.name}'s details updated successfully!`, 'Resident Updated');
-            } else {
-                const residentRef = await createResident({
+
+                await updateResident(editingResident.id, {
                     ...form,
-                    societyId,
+                    uid: residentUid || editingResident.uid || null,
                 });
                 const selectedFlat = flats.find((flat) => String(flat.flatNumber) === String(form.flat));
                 if (selectedFlat) {
-                    await assignResidentToFlat(selectedFlat.id, residentRef.id, form.name);
+                    await assignResidentToFlat(selectedFlat.id, residentUid || editingResident.id, form.name);
                 }
+                toast.success(`${form.name}'s details updated successfully!`, 'Resident Updated');
+            } else {
+                const issued = await generateCredential({
+                    societyId,
+                    email: form.email,
+                    role: 'resident',
+                    flatNumber: form.flat,
+                    name: form.name,
+                });
+                const residentRef = await createResident({
+                    ...form,
+                    societyId,
+                    uid: issued.uid,
+                });
+                const selectedFlat = flats.find((flat) => String(flat.flatNumber) === String(form.flat));
+                if (selectedFlat) {
+                    await assignResidentToFlat(selectedFlat.id, issued.uid, form.name);
+                }
+                setGeneratedCredential({
+                    name: form.name,
+                    email: issued.email,
+                    tempPassword: issued.tempPassword,
+                    flat: form.flat,
+                });
                 toast.success(`${form.name} added to flat ${form.flat}!`, 'Resident Added');
             }
             setModalOpen(false);
@@ -177,6 +223,29 @@ const ResidentManagement = () => {
                         </Button>
                     </div>
                 </form>
+            </Modal>
+
+            <Modal isOpen={!!generatedCredential} title="Resident Login Created" onClose={() => setGeneratedCredential(null)} size="sm">
+                {generatedCredential && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                            Use these resident credentials to log in from the resident portal.
+                        </p>
+                        <div className="detail-grid">
+                            <div className="detail-label">Name</div>
+                            <div className="detail-value">{generatedCredential.name}</div>
+                            <div className="detail-label">Flat</div>
+                            <div className="detail-value">{generatedCredential.flat}</div>
+                            <div className="detail-label">Email</div>
+                            <div className="detail-value">{generatedCredential.email}</div>
+                            <div className="detail-label">Temp Password</div>
+                            <div className="detail-value">{generatedCredential.tempPassword}</div>
+                        </div>
+                        <div className="modal-actions">
+                            <Button variant="primary" type="button" onClick={() => setGeneratedCredential(null)}>Done</Button>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </>
     );

@@ -54,7 +54,7 @@ const ResidentDashboard = () => {
 
     useEffect(() => {
         if (!user?.uid) return;
-        const unsubBills = subscribeToResidentBills(user.uid, (items) => {
+        const unsubBills = subscribeToResidentBills(user.uid, user?.societyId || null, (items) => {
             setPendingBills(items.filter(b => !b.isPaid).length);
         });
         const unsubComplaints = subscribeToResidentComplaints(user.uid, (items) => {
@@ -68,7 +68,7 @@ const ResidentDashboard = () => {
             unsubComplaints && unsubComplaints();
             unsubAnnouncements && unsubAnnouncements();
         };
-    }, [user?.uid]);
+    }, [user?.uid, user?.societyId]);
 
     const stats = useMemo(() => ([
         {
@@ -107,7 +107,7 @@ const ResidentDashboard = () => {
             accent: 'info',
             prefix: ''
         },
-    ]), []);
+    ]), [pendingBills, activeComplaints, announcementCount]);
 
     const quickActions = [
         { label: 'Pay Maintenance', Icon: WalletCards, route: '/resident/pay', accent: 'indigo' },

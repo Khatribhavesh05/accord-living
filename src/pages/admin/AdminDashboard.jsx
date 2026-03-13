@@ -9,6 +9,7 @@ import {
 import { Button } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import { useAuth } from '../../context/AuthContext';
+import { subscribeToFlats } from '../../firebase/flatService';
 import { subscribeToResidents } from '../../firebase/residentService';
 import { subscribeBillingStats } from '../../firebase/billService';
 import { subscribeToAllComplaints } from '../../firebase/complaintService';
@@ -74,6 +75,7 @@ const AdminDashboard = () => {
     const { user } = useAuth();
     const societyId = user?.societyId || 'default-society';
 
+    const [flatCount, setFlatCount] = useState(0);
     const [residentCount, setResidentCount] = useState(0);
     const [collectionStats, setCollectionStats] = useState({ totalBilled: 0, totalCollected: 0, totalPending: 0, billCount: 0, collectionPercentage: 0 });
     const [openComplaints, setOpenComplaints] = useState(0);
@@ -86,6 +88,9 @@ const AdminDashboard = () => {
     }, []);
 
     useEffect(() => {
+        const unsubFlats = subscribeToFlats(societyId, (items) => {
+            setFlatCount(items.length);
+        });
         const unsubResidents = subscribeToResidents(societyId, (items) => {
             setResidentCount(items.length);
         });
@@ -102,6 +107,7 @@ const AdminDashboard = () => {
             setActiveAlerts(items.length);
         });
         return () => {
+            unsubFlats && unsubFlats();
             unsubResidents && unsubResidents();
             unsubBills && unsubBills();
             unsubComplaints && unsubComplaints();
@@ -114,10 +120,10 @@ const AdminDashboard = () => {
         {
             key: 'flats',
             label: 'Total Flats',
-            value: 0,
+            value: flatCount || 0,
             prefix: '',
             suffix: '',
-            description: 'No data yet',
+            description: flatCount > 0 ? 'Live flat count' : 'No data yet',
             trend: '0%',
             trendType: 'up',
             Icon: Building2,
@@ -171,7 +177,7 @@ const AdminDashboard = () => {
             Icon: AlertTriangle,
             tint: 'rose',
         },
-    ]), []);
+    ]), [flatCount, residentCount, collectionStats.totalCollected, collectionStats.totalPending, openComplaints]);
 
     const handleDownloadReport = () => {
         toast.success('Dashboard report downloaded successfully!', 'Download Complete');

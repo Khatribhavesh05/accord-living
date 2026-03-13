@@ -18,12 +18,12 @@ const MyBills = () => {
     // Subscribe to resident's bills
     useEffect(() => {
         if (!user?.uid) return;
-        const unsub = subscribeToResidentBills(user.uid, (data) => {
+        const unsub = subscribeToResidentBills(user.uid, user?.societyId || null, (data) => {
             setBills(data);
             setLoading(false);
         });
         return () => unsub();
-    }, [user?.uid]);
+    }, [user?.uid, user?.societyId]);
 
     // Get the current bill (latest pending or first from list)
     const currentBill = bills.find(b => b.paymentStatus === 'Pending') || bills[0] || null;

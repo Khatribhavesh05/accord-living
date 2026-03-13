@@ -53,11 +53,13 @@ export const subscribeToAllBills = (societyId, callback) => {
 /**
  * Get resident's bills with their payment status
  * @param {string} residentUid - Firebase UID of logged-in resident
+ * @param {string} societyId - resident's society ID
  * @param {function} callback - called with array of bills
  */
-export const subscribeToResidentBills = (residentUid, callback) => {
-    // Get all bills from the collection
-    const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
+export const subscribeToResidentBills = (residentUid, societyId, callback) => {
+    const q = societyId
+        ? query(collection(db, COLLECTION), where('societyId', '==', societyId))
+        : query(collection(db, COLLECTION));
     return onSnapshot(q, (snapshot) => {
         const items = snapshot.docs.map((d) => {
             const data = d.data();
@@ -77,6 +79,11 @@ export const subscribeToResidentBills = (residentUid, callback) => {
                 paidDate: residentPayment?.paidDate,
                 paymentStatus: residentPayment?.status || 'Pending'
             };
+        });
+        items.sort((a, b) => {
+            const at = a.createdAt?.toDate?.()?.getTime?.() || 0;
+            const bt = b.createdAt?.toDate?.()?.getTime?.() || 0;
+            return bt - at;
         });
         callback(items);
     }, (error) => {
