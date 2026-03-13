@@ -3,11 +3,14 @@ import { PageHeader, Card, StatusBadge, Button, StatCard } from '../../component
 import { useToast } from '../../components/ui/Toast';
 import { subscribeToAllBills, subscribeBillingStats, generateBill, deleteBill } from '../../firebase/billService';
 import Modal from '../../components/ui/Modal';
+import { useAuth } from '../../context/AuthContext';
 import { Trash2, Eye } from 'lucide-react';
 import './BillManagement.css';
 
 const BillManagement = () => {
     const toast = useToast();
+    const { user } = useAuth();
+    const societyId = user?.societyId || null;
     const [bills, setBills] = useState([]);
     const [stats, setStats] = useState({
         totalBilled: 0,
@@ -30,12 +33,12 @@ const BillManagement = () => {
 
     // Subscribe to all bills and stats
     useEffect(() => {
-        const unsubBills = subscribeToAllBills((data) => {
+        const unsubBills = subscribeToAllBills(societyId, (data) => {
             setBills(data);
             setLoading(false);
         });
         
-        const unsubStats = subscribeBillingStats((statsData) => {
+        const unsubStats = subscribeBillingStats(societyId, (statsData) => {
             setStats(statsData);
         });
         
@@ -43,7 +46,7 @@ const BillManagement = () => {
             unsubBills();
             unsubStats();
         };
-    }, []);
+    }, [societyId]);
 
     const handleGenerate = async (e) => {
         e.preventDefault();
@@ -60,7 +63,8 @@ const BillManagement = () => {
                 totalAmount: parseInt(form.totalAmount),
                 dueDate: form.dueDate,
                 description: form.description,
-                payments: []
+                payments: [],
+                societyId,
             });
             toast.success(`Bill for ${form.billMonth}/${form.billYear} generated successfully!`, 'Bill Created');
             setModalOpen(false);

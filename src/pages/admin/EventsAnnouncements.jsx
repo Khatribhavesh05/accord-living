@@ -7,10 +7,13 @@ import {
     Wrench, Users, Info, Plus, MapPin, Megaphone, Trash2
 } from 'lucide-react';
 import { postAnnouncement, deleteAnnouncement, subscribeToAnnouncements } from '../../firebase/announcementService';
+import { useAuth } from '../../context/AuthContext';
 import './EventsAnnouncements.css';
 
 const EventsAnnouncements = () => {
     const toast = useToast();
+    const { user } = useAuth();
+    const societyId = user?.societyId || null;
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [createModal, setCreateModal] = useState(false);
@@ -19,12 +22,12 @@ const EventsAnnouncements = () => {
     const [form, setForm] = useState({ title: '', date: '', time: '', location: '', message: '', annType: 'info' });
 
     useEffect(() => {
-        const unsub = subscribeToAnnouncements((data) => {
+        const unsub = subscribeToAnnouncements(societyId, (data) => {
             setItems(data);
             setLoading(false);
         });
         return () => unsub();
-    }, []);
+    }, [societyId]);
 
     const events = items.filter(i => i.category === 'event');
     const announcements = items.filter(i => i.category === 'notice');
@@ -42,6 +45,7 @@ const EventsAnnouncements = () => {
                     time: form.time,
                     location: form.location,
                     message: `${form.date} at ${form.time} — ${form.location}`,
+                    societyId,
                 });
                 toast.success(`Event "${form.title}" created!`, 'Event Added');
             } else {
@@ -50,6 +54,7 @@ const EventsAnnouncements = () => {
                     type: form.annType,
                     title: form.title,
                     message: form.message,
+                    societyId,
                 });
                 toast.success(`Notice "${form.title}" published!`, 'Notice Posted');
             }

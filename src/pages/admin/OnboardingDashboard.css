@@ -1,0 +1,370 @@
+/* ========================================
+   OnboardingDashboard.css
+   ======================================== */
+
+.onb-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px 60px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.onb-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 40px 44px;
+    width: 100%;
+    max-width: 720px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+}
+
+.onb-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.onb-brand {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1a1a2e;
+    letter-spacing: 2px;
+    margin: 0 0 4px;
+}
+
+.onb-society-name {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+/* Progress */
+.onb-progress {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 36px;
+    position: relative;
+}
+
+.onb-progress::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: 10%;
+    width: 80%;
+    height: 2px;
+    background: #e5e7eb;
+    z-index: 0;
+}
+
+.onb-progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.onb-progress-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid #e5e7eb;
+    background: #f9fafb;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    transition: all 0.3s;
+}
+
+.onb-progress-done .onb-progress-dot {
+    background: #10b981;
+    border-color: #10b981;
+    color: #fff;
+}
+
+.onb-progress-active .onb-progress-dot {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+}
+
+.onb-progress-label {
+    font-size: 11px;
+    color: #9ca3af;
+    text-align: center;
+    font-weight: 500;
+}
+
+.onb-progress-done .onb-progress-label,
+.onb-progress-active .onb-progress-label {
+    color: #374151;
+    font-weight: 600;
+}
+
+/* Step content */
+.onb-step-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.onb-step-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.onb-step-content h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 8px;
+}
+
+.onb-step-desc {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 24px;
+    max-width: 480px;
+}
+
+/* Flat textarea */
+.onb-input-group {
+    width: 100%;
+    max-width: 480px;
+    margin-bottom: 16px;
+}
+
+.onb-textarea {
+    width: 100%;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+    color: #111827;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+    background: #f9fafb;
+}
+
+.onb-textarea:focus {
+    border-color: #6366f1;
+    background: #fff;
+}
+
+.onb-textarea:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+}
+
+/* Resident form */
+.onb-resident-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+    max-width: 560px;
+    justify-content: center;
+    margin-bottom: 4px;
+}
+
+.onb-resident-form input,
+.onb-resident-form select {
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #111827;
+    outline: none;
+    background: #f9fafb;
+    flex: 1;
+    min-width: 140px;
+}
+
+.onb-resident-form input:focus,
+.onb-resident-form select:focus {
+    border-color: #6366f1;
+    background: #fff;
+}
+
+/* List */
+.onb-list {
+    width: 100%;
+    max-width: 560px;
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+}
+
+.onb-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f3f4f6;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #374151;
+}
+
+.onb-remove-btn {
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+}
+
+/* Credentials table */
+.onb-creds-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+}
+
+.onb-creds-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.onb-creds-table th {
+    background: #f3f4f6;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.onb-creds-table td {
+    padding: 10px 14px;
+    color: #111827;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.onb-pass {
+    background: #fef3c7;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #92400e;
+}
+
+.onb-creds-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Success banner */
+.onb-success-banner {
+    background: #d1fae5;
+    border: 1px solid #6ee7b7;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    color: #065f46;
+    font-weight: 600;
+    margin-bottom: 12px;
+    width: 100%;
+    max-width: 480px;
+}
+
+/* Buttons */
+.onb-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.onb-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.onb-btn-primary {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #fff;
+}
+
+.onb-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
+}
+
+.onb-btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.onb-btn-secondary:hover:not(:disabled) {
+    background: #e5e7eb;
+}
+
+.onb-btn-outline {
+    background: transparent;
+    color: #6366f1;
+    border: 2px solid #6366f1;
+}
+
+.onb-btn-outline:hover:not(:disabled) {
+    background: #eef2ff;
+}
+
+/* Checklist */
+.onb-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
+    width: 100%;
+    max-width: 380px;
+}
+
+.onb-checklist li {
+    font-size: 15px;
+    color: #065f46;
+    background: #d1fae5;
+    border-radius: 8px;
+    padding: 10px 16px;
+}
+
+.onb-complete h2 {
+    font-size: 28px;
+}
+
+@media (max-width: 600px) {
+    .onb-card {
+        padding: 28px 20px;
+    }
+    .onb-creds-actions {
+        flex-direction: column;
+    }
+}

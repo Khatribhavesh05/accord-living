@@ -1,5 +1,5 @@
 import React from 'react';
-import Login from '../components/features/Login';
+import { Link } from 'react-router-dom';
 import '../styles/LandingPage.css';
 
 const LandingPage = () => {
@@ -22,7 +22,19 @@ const LandingPage = () => {
                     </div>
                 </div>
                 <div className="hero-right">
-                    <Login />
+                    <div className="landing-cta-panel">
+                        <div className="landing-cta-icon">🏢</div>
+                        <h2 className="landing-cta-title">Live in Harmony</h2>
+                        <p className="landing-cta-sub">Set up your society or log in to your account.</p>
+                        <div className="landing-cta-buttons">
+                            <Link to="/signup/create-society" className="landing-btn landing-btn-primary">
+                                🚀 Create New Society
+                            </Link>
+                            <Link to="/login" className="landing-btn landing-btn-outline">
+                                Login
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </section>
 

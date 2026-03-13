@@ -4,10 +4,13 @@ import { Search, Filter, Download, Eye, CheckCircle, Clock, AlertCircle, Message
 import { useToast } from '../../components/ui/Toast';
 import { subscribeToAllComplaints, updateComplaintStatus, deleteComplaint } from '../../firebase/complaintService';
 import Modal from '../../components/ui/Modal.jsx';
+import { useAuth } from '../../context/AuthContext';
 import './ComplaintManagement.css';
 
 const ComplaintManagement = () => {
     const toast = useToast();
+    const { user } = useAuth();
+    const societyId = user?.societyId || null;
     const [complaints, setComplaints] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -18,12 +21,12 @@ const ComplaintManagement = () => {
 
     // Subscribe to all complaints from Firestore
     useEffect(() => {
-        const unsub = subscribeToAllComplaints((data) => {
+        const unsub = subscribeToAllComplaints(societyId, (data) => {
             setComplaints(data);
             setLoading(false);
         });
         return () => unsub();
-    }, []);
+    }, [societyId]);
 
     // Calculate Stats
     const stats = useMemo(() => {

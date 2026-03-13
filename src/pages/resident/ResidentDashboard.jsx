@@ -60,7 +60,7 @@ const ResidentDashboard = () => {
         const unsubComplaints = subscribeToResidentComplaints(user.uid, (items) => {
             setActiveComplaints(items.filter(c => (c.status || '').toLowerCase() !== 'resolved').length);
         });
-        const unsubAnnouncements = subscribeToAnnouncements((items) => {
+        const unsubAnnouncements = subscribeToAnnouncements(user?.societyId || null, (items) => {
             setAnnouncementCount(items.length);
         });
         return () => {

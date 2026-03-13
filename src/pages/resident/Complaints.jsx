@@ -37,6 +37,7 @@ const Complaints = () => {
                 residentUid: user.uid,
                 residentName: user.name || 'Resident',
                 residentFlat: user.flatNumber || 'N/A',
+                societyId: user?.societyId || null,
             });
             toast.success('Complaint submitted successfully!', 'Complaint Raised');
             setFormData({ category: 'Plumbing', description: '' });

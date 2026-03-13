@@ -1,7 +1,7 @@
 import { db } from './config';
 import {
     collection, addDoc, deleteDoc, doc, updateDoc,
-    query, where, orderBy, onSnapshot, serverTimestamp
+    query, where, onSnapshot, serverTimestamp
 } from 'firebase/firestore';
 
 const COLLECTION = 'complaints';
@@ -20,12 +20,14 @@ export const submitComplaint = (data) => {
 };
 
 /**
- * Get all complaints (Admin view)
- * Ordered newest first
+ * Get all complaints (Admin view) filtered by society
+ * @param {string} societyId - filter by society
  * @param {function} callback - called with array of complaints
  */
-export const subscribeToAllComplaints = (callback) => {
-    const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
+export const subscribeToAllComplaints = (societyId, callback) => {
+    const q = societyId
+        ? query(collection(db, COLLECTION), where('societyId', '==', societyId))
+        : query(collection(db, COLLECTION));
     return onSnapshot(q, (snapshot) => {
         const items = snapshot.docs.map((d) => {
             const data = d.data();
@@ -34,6 +36,12 @@ export const subscribeToAllComplaints = (callback) => {
                 ? ts.toDate().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
                 : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
             return { id: d.id, ...data, displayDate };
+        });
+        // Sort newest first in JS (avoids composite index)
+        items.sort((a, b) => {
+            const at = a.createdAt?.toDate?.()?.getTime?.() || 0;
+            const bt = b.createdAt?.toDate?.()?.getTime?.() || 0;
+            return bt - at;
         });
         callback(items);
     }, (error) => {

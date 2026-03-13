@@ -1,7 +1,7 @@
 import { db } from './config';
 import {
     collection, addDoc, deleteDoc, doc, updateDoc, getDoc,
-    query, where, orderBy, onSnapshot, serverTimestamp
+    query, where, onSnapshot, serverTimestamp
 } from 'firebase/firestore';
 
 const COLLECTION = 'bills';
@@ -21,10 +21,13 @@ export const generateBill = (data) => {
 /**
  * Get all bills (Admin view)
  * Ordered newest first
+ * @param {string} societyId - filter by society
  * @param {function} callback - called with array of bills
  */
-export const subscribeToAllBills = (callback) => {
-    const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
+export const subscribeToAllBills = (societyId, callback) => {
+    const q = societyId
+        ? query(collection(db, COLLECTION), where('societyId', '==', societyId))
+        : query(collection(db, COLLECTION));
     return onSnapshot(q, (snapshot) => {
         const items = snapshot.docs.map((d) => {
             const data = d.data();
@@ -33,6 +36,12 @@ export const subscribeToAllBills = (callback) => {
                 ? ts.toDate().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
                 : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
             return { id: d.id, ...data, displayDate };
+        });
+        // Sort newest first in JS to avoid composite index requirement
+        items.sort((a, b) => {
+            const at = a.createdAt?.toDate?.()?.getTime?.() || 0;
+            const bt = b.createdAt?.toDate?.()?.getTime?.() || 0;
+            return bt - at;
         });
         callback(items);
     }, (error) => {
@@ -142,8 +151,10 @@ export const deleteBill = (billId) => {
  * Get billing statistics (admin)
  * @param {function} callback - called with stats object
  */
-export const subscribeBillingStats = (callback) => {
-    const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'));
+export const subscribeBillingStats = (societyId, callback) => {
+    const q = societyId
+        ? query(collection(db, COLLECTION), where('societyId', '==', societyId))
+        : query(collection(db, COLLECTION));
     return onSnapshot(q, (snapshot) => {
         const bills = snapshot.docs.map(d => d.data());
         

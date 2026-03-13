@@ -89,10 +89,10 @@ const AdminDashboard = () => {
         const unsubResidents = subscribeToResidents(societyId, (items) => {
             setResidentCount(items.length);
         });
-        const unsubBills = subscribeBillingStats((stats) => {
+        const unsubBills = subscribeBillingStats(societyId, (stats) => {
             setCollectionStats(stats);
         });
-        const unsubComplaints = subscribeToAllComplaints((items) => {
+        const unsubComplaints = subscribeToAllComplaints(societyId, (items) => {
             setOpenComplaints(items.filter(c => (c.status || '').toLowerCase() !== 'resolved').length);
         });
         const unsubAttendance = subscribeToTodayAttendance(societyId, (items) => {

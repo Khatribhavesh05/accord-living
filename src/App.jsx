@@ -5,6 +5,9 @@ import { VisitorProvider } from './context/VisitorContext';
 import { AuthProvider } from './context/AuthContext';
 
 import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/auth/LoginPage';
+import CreateSocietyPage from './pages/auth/CreateSocietyPage';
+import OnboardingDashboard from './pages/admin/OnboardingDashboard';
 import AdminLayout from './pages/AdminLayout';
 import * as AdminPages from './pages/admin/index';
 import ResidentLayout from './pages/ResidentLayout';
@@ -27,11 +30,16 @@ function App() {
                         <Router>
                         <Routes>
                             <Route path="/" element={<LandingPage />} />
+                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="/signup/create-society" element={<CreateSocietyPage />} />
+
+                            {/* Legacy redirects */}
                             <Route path="/admin-dashboard" element={<Navigate to="/admin/dashboard" replace />} />
                             <Route path="/resident-dashboard" element={<Navigate to="/resident/dashboard" replace />} />
                             <Route path="/security-dashboard" element={<Navigate to="/security/dashboard" replace />} />
                             <Route path="/admin" element={<AdminLayout />}>
                                 <Route index element={<Navigate to="dashboard" replace />} />
+                                <Route path="onboarding" element={<OnboardingDashboard />} />
                                 <Route path="dashboard" element={<AdminPages.AdminDashboard />} />
                                 <Route path="residents" element={<AdminPages.ResidentManagement />} />
                                 <Route path="maintenance" element={<AdminPages.BillManagement />} />

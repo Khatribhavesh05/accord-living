@@ -1,23 +1,10 @@
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config';
 
-// Role assigned by email for the 3 known accounts
-const EMAIL_ROLE_MAP = {
-  'admin@accordliving.com': 'admin',
-  'resident@accordliving.com': 'resident',
-  'security@accordliving.com': 'security',
-};
-
-const EMAIL_NAME_MAP = {
-  'admin@accordliving.com': 'Society Admin',
-  'resident@accordliving.com': 'Demo Resident',
-  'security@accordliving.com': 'Security Guard',
-};
-
 /**
  * Gets or creates a user profile document in Firestore.
- * Role is determined by email for the 3 known accounts.
- * For any other email, defaults to 'resident'.
+ * Role and societyId come from the existing Firestore doc (set during credential generation).
+ * Falls back to 'resident' for any new Google-auth user.
  */
 export async function getOrCreateUserProfile(firebaseUser) {
   const ref = doc(db, 'users', firebaseUser.uid);
@@ -27,18 +14,17 @@ export async function getOrCreateUserProfile(firebaseUser) {
     return snap.data();
   }
 
-  // Create new profile
-  const email = firebaseUser.email.toLowerCase();
-  const role = EMAIL_ROLE_MAP[email] || 'resident';
-  const name = EMAIL_NAME_MAP[email] || firebaseUser.displayName || email.split('@')[0];
+  // New user (e.g. first Google sign-in) — create minimal profile
+  const email = firebaseUser.email?.toLowerCase() || '';
+  const name = firebaseUser.displayName || email.split('@')[0] || 'User';
 
   const profile = {
     uid: firebaseUser.uid,
     email,
     name,
-    role,
-    flatNumber: role === 'resident' ? '101' : null,
-    societyId: 'accord-living-cf585',
+    role: 'resident',
+    flatNumber: null,
+    societyId: null,
     createdAt: serverTimestamp(),
   };
 

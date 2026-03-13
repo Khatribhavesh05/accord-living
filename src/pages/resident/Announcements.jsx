@@ -5,16 +5,19 @@ import {
     Check, CheckCircle2, Loader2
 } from 'lucide-react';
 import { subscribeToAnnouncements } from '../../firebase/announcementService';
+import { useAuth } from '../../context/AuthContext';
 import './Announcements.css';
 
 const Announcements = () => {
+    const { user } = useAuth();
+    const societyId = user?.societyId || null;
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedIds, setExpandedIds] = useState([]);
     const [readIds, setReadIds] = useState(new Set());
 
     useEffect(() => {
-        const unsub = subscribeToAnnouncements((items) => {
+        const unsub = subscribeToAnnouncements(societyId, (items) => {
             // Map Firestore fields to UI shape
             const mapped = items.map(item => ({
                 id: item.id,
@@ -28,7 +31,7 @@ const Announcements = () => {
             setLoading(false);
         });
         return () => unsub();
-    }, []);
+    }, [societyId]);
 
     // ── Handlers ──
     const toggleExpand = (id) => {
