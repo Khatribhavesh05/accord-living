@@ -25,18 +25,41 @@ const ResidentManagement = () => {
 
     const [modalOpen, setModalOpen] = useState(false);
     const [editingResident, setEditingResident] = useState(null);
-    const [generatedCredential, setGeneratedCredential] = useState(null);
-    const [form, setForm] = useState({ name: '', flat: '', email: '', phone: '', status: 'Active' });
+    const [form, setForm] = useState({
+        name: '',
+        flat: '',
+        email: '',
+        phone: '',
+        status: 'Active',
+        password: '',
+        confirmPassword: '',
+    });
 
     const openAddModal = () => {
         setEditingResident(null);
-        setForm({ name: '', flat: '', email: '', phone: '', status: 'Active' });
+        setForm({
+            name: '',
+            flat: '',
+            email: '',
+            phone: '',
+            status: 'Active',
+            password: '',
+            confirmPassword: '',
+        });
         setModalOpen(true);
     };
 
     const openEditModal = (resident) => {
         setEditingResident(resident);
-        setForm({ name: resident.name, flat: resident.flat, email: resident.email, phone: resident.phone || '', status: resident.status });
+        setForm({
+            name: resident.name,
+            flat: resident.flat,
+            email: resident.email,
+            phone: resident.phone || '',
+            status: resident.status,
+            password: '',
+            confirmPassword: '',
+        });
         setModalOpen(true);
     };
 
@@ -52,6 +75,23 @@ const ResidentManagement = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        const shouldCreateResidentLogin = !editingResident || !editingResident.uid;
+        if (shouldCreateResidentLogin) {
+            if (!form.password) {
+                toast.error('Please set a password for this resident login.', 'Password Required');
+                return;
+            }
+            if (form.password.length < 6) {
+                toast.error('Resident password must be at least 6 characters.', 'Password Too Short');
+                return;
+            }
+            if (form.password !== form.confirmPassword) {
+                toast.error('Password and confirm password do not match.', 'Password Mismatch');
+                return;
+            }
+        }
+
         try {
             if (editingResident) {
                 let residentUid = editingResident.uid || null;
@@ -63,14 +103,9 @@ const ResidentManagement = () => {
                         role: 'resident',
                         flatNumber: form.flat,
                         name: form.name,
+                        password: form.password,
                     });
                     residentUid = issued.uid;
-                    setGeneratedCredential({
-                        name: form.name,
-                        email: issued.email,
-                        tempPassword: issued.tempPassword,
-                        flat: form.flat,
-                    });
                 } else {
                     await updateUserProfile(residentUid, {
                         name: form.name,
@@ -96,9 +131,14 @@ const ResidentManagement = () => {
                     role: 'resident',
                     flatNumber: form.flat,
                     name: form.name,
+                    password: form.password,
                 });
                 const residentRef = await createResident({
-                    ...form,
+                    name: form.name,
+                    flat: form.flat,
+                    email: form.email,
+                    phone: form.phone,
+                    status: form.status,
                     societyId,
                     uid: issued.uid,
                 });
@@ -106,17 +146,19 @@ const ResidentManagement = () => {
                 if (selectedFlat) {
                     await assignResidentToFlat(selectedFlat.id, issued.uid, form.name);
                 }
-                setGeneratedCredential({
-                    name: form.name,
-                    email: issued.email,
-                    tempPassword: issued.tempPassword,
-                    flat: form.flat,
-                });
                 toast.success(`${form.name} added to flat ${form.flat}!`, 'Resident Added');
             }
             setModalOpen(false);
             setEditingResident(null);
-            setForm({ name: '', flat: '', email: '', phone: '', status: 'Active' });
+            setForm({
+                name: '',
+                flat: '',
+                email: '',
+                phone: '',
+                status: 'Active',
+                password: '',
+                confirmPassword: '',
+            });
         } catch (err) {
             console.error('Resident save failed', err);
             toast.error('Unable to save resident. Please try again.', 'Error');
@@ -125,6 +167,7 @@ const ResidentManagement = () => {
 
     const availableFlats = flats.filter((flat) => !flat.residentUid || editingResident?.flat === flat.flatNumber);
     const hasResidents = Array.isArray(residents) && residents.length > 0;
+    const requiresCredentialSetup = !editingResident || !editingResident.uid;
 
     return (
         <>
@@ -209,6 +252,30 @@ const ResidentManagement = () => {
                             <input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="9876543210" />
                         </div>
                     </div>
+                    {requiresCredentialSetup && (
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label>Password</label>
+                                <input
+                                    type="password"
+                                    value={form.password}
+                                    onChange={e => setForm({ ...form, password: e.target.value })}
+                                    placeholder="Enter resident password"
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Confirm Password</label>
+                                <input
+                                    type="password"
+                                    value={form.confirmPassword}
+                                    onChange={e => setForm({ ...form, confirmPassword: e.target.value })}
+                                    placeholder="Repeat resident password"
+                                    required
+                                />
+                            </div>
+                        </div>
+                    )}
                     <div className="form-group">
                         <label>Status</label>
                         <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
@@ -223,29 +290,6 @@ const ResidentManagement = () => {
                         </Button>
                     </div>
                 </form>
-            </Modal>
-
-            <Modal isOpen={!!generatedCredential} title="Resident Login Created" onClose={() => setGeneratedCredential(null)} size="sm">
-                {generatedCredential && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
-                            Use these resident credentials to log in from the resident portal.
-                        </p>
-                        <div className="detail-grid">
-                            <div className="detail-label">Name</div>
-                            <div className="detail-value">{generatedCredential.name}</div>
-                            <div className="detail-label">Flat</div>
-                            <div className="detail-value">{generatedCredential.flat}</div>
-                            <div className="detail-label">Email</div>
-                            <div className="detail-value">{generatedCredential.email}</div>
-                            <div className="detail-label">Temp Password</div>
-                            <div className="detail-value">{generatedCredential.tempPassword}</div>
-                        </div>
-                        <div className="modal-actions">
-                            <Button variant="primary" type="button" onClick={() => setGeneratedCredential(null)}>Done</Button>
-                        </div>
-                    </div>
-                )}
             </Modal>
         </>
     );
