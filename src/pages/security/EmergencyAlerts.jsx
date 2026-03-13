@@ -63,8 +63,9 @@ const EmergencyAlerts = () => {
     const handleAcknowledge = async (alert) => {
         try {
             await updateEmergencyStatus(alert.id, 'ACKNOWLEDGED', {
-                acknowledgedBy: user?.id || 'security',
+                acknowledgedBy: user?.name || user?.id || 'security',
             });
+            toast.success('Emergency acknowledged');
         } catch (err) {
             console.error('Failed to acknowledge emergency', err);
         }
@@ -148,6 +149,7 @@ const EmergencyAlerts = () => {
                                         gap: 8,
                                         position: 'relative',
                                         overflow: 'hidden',
+                                        animation: 'pulse 1.5s infinite' // Soft pulse animation
                                     }}
                                 >
                                     <div style={{
@@ -155,45 +157,39 @@ const EmergencyAlerts = () => {
                                         insetInlineStart: 0,
                                         top: 0,
                                         bottom: 0,
-                                        width: 4,
-                                        background: 'linear-gradient(to bottom,#dc2626,#f97316)',
+                                        width: 8, // Wider red border
+                                        background: '#dc2626',
                                     }} />
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <AlertTriangle size={18} color="#b91c1c" />
-                                        <strong>{alert.title || 'Emergency Alert'}</strong>
+                                        <strong style={{ color: '#b91c1c', fontSize: 16 }}>🚨 {alert.type || alert.title || 'ALERT'}</strong>
                                     </div>
-                                    {alert.message && (
-                                        <div style={{ fontSize: 13, color: '#4b5563' }}>{alert.message}</div>
-                                    )}
-                                    <div style={{ display: 'flex', gap: 14, fontSize: 12, color: '#6b7280', alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <div style={{ fontSize: 14, color: '#374151', paddingLeft: 26 }}>
+                                        {alert.flatNumber && <div style={{ fontWeight: 600 }}>Flat: {alert.flatNumber}</div>}
+                                        {alert.residentName && <div>Resident: {alert.residentName}</div>}
+                                        {alert.message && <div style={{ marginTop: 4 }}>{alert.message}</div>}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 14, fontSize: 12, color: '#6b7280', alignItems: 'center', flexWrap: 'wrap', paddingLeft: 26, marginTop: 4 }}>
                                         {alert.location && (
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                                 <MapPin size={12} /> {alert.location}
                                             </span>
                                         )}
-                                        {alert.createdAt && (
+                                        {(alert.createdTime || alert.createdAt) && (
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                                <Clock size={12} /> {alert.createdAt.toDate?.().toLocaleString?.() || ''}
+                                                <Clock size={12} /> {alert.createdTime ? new Date(alert.createdTime).toLocaleString('en-IN') : alert.createdAt.toDate?.().toLocaleString?.() || ''}
                                             </span>
                                         )}
                                     </div>
-                                    <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
+                                    <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-start', paddingLeft: 26 }}>
                                         {alert.status === 'ACTIVE' && (
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                onClick={() => handleAcknowledge(alert)}
-                                            >
-                                                Acknowledge
-                                            </Button>
-                                        )}
-                                        {alert.status !== 'RESOLVED' && (
                                             <Button
                                                 variant="danger"
                                                 size="sm"
-                                                onClick={() => handleResolve(alert)}
+                                                onClick={() => handleAcknowledge(alert)}
+                                                style={{ fontWeight: 'bold' }}
                                             >
-                                                Mark Resolved
+                                                Acknowledge
                                             </Button>
                                         )}
                                     </div>

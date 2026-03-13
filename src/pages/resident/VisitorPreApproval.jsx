@@ -7,8 +7,10 @@ import {
     createPreApproval,
     cancelPreApproval
 } from '../../firebase/visitorService';
+import { downloadApprovalPDF } from '../../utils/approvalPDFGenerator';
 import Modal from '../../components/ui/Modal.jsx';
-import { Plus, Trash2 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { Plus, Trash2, Download } from 'lucide-react';
 import './VisitorPreApproval.css';
 
 const VisitorPreApproval = () => {
@@ -192,6 +194,25 @@ const VisitorPreApproval = () => {
                                             <span className="vpa-detail-label">Approval Code:</span>
                                             <span className="vpa-detail-value monospace">{preApproval.approvalCode}</span>
                                         </div>
+                                    </div>
+
+                                    {/* QR Code and Download PDF section */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '20px 0', padding: '16px', background: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                                        <div style={{ marginBottom: '16px' }}>
+                                            <QRCodeSVG 
+                                                value={preApproval.approvalCode}
+                                                size={160}
+                                                level="H"
+                                                includeMargin={true}
+                                            />
+                                        </div>
+                                        <Button 
+                                            variant="secondary" 
+                                            onClick={() => downloadApprovalPDF(preApproval)}
+                                            style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px' }}
+                                        >
+                                            <Download size={16} /> Download Approval PDF
+                                        </Button>
                                     </div>
 
                                     {preApproval.status === 'pending' && (

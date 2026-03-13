@@ -65,6 +65,32 @@ export const subscribeToStaff = (societyId, callback) => {
   );
 };
 
+export const subscribeToSecurityStaff = (societyId, callback) => {
+  const q = query(
+    collection(db, COLLECTION),
+    where('societyId', '==', societyId),
+    where('role', '==', 'Security')
+  );
+
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const staff = snapshot.docs.map(doc => ({
+        id: doc.id,
+        name: doc.data().name,
+        phone: doc.data().phone,
+        role: doc.data().role,
+        status: doc.data().status // "On Duty" or "Off Duty"
+      }));
+      callback(staff);
+    },
+    (error) => {
+      console.error('Error fetching security staff:', error);
+      callback([]);
+    }
+  );
+};
+
 export const fetchStaffOnce = async (societyId) => {
   const q = societyId
     ? query(collection(db, COLLECTION), where('societyId', '==', societyId))

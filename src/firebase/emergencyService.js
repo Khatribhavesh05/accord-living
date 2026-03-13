@@ -56,26 +56,25 @@ export const getEmergencyById = async (emergencyId) => {
 };
 
 export const subscribeToActiveEmergencies = (societyId, callback) => {
-  const base = [
+  const q = query(
+    collection(db, COLLECTION),
+    where('societyId', '==', societyId),
     where('status', '==', 'ACTIVE'),
-  ];
-
-  const filters = societyId
-    ? [where('societyId', '==', societyId), ...base]
-    : base;
-
-  const q = query(collection(db, COLLECTION), ...filters, orderBy('createdAt', 'desc'));
-
-  return onSnapshot(
-    q,
+    orderBy('createdAt', 'desc')
+  );
+  
+  return onSnapshot(q,
     (snapshot) => {
-      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-      callback(items);
+      const emergencies = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      callback(emergencies);
     },
     (error) => {
-      console.error('[Firestore Error] subscribeToActiveEmergencies:', error);
+      console.error('Error fetching emergencies:', error);
       callback([]);
-    },
+    }
   );
 };
 

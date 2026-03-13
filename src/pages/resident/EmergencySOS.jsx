@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader, Button } from '../../components/ui';
 import { Phone, Shield, User, Flame, HeartPulse, Siren } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { triggerEmergency } from '../../firebase/emergencyService';
+import { subscribeToSecurityStaff } from '../../firebase/staffService';
 import './EmergencySOS.css';
 
 const EmergencySOS = () => {
@@ -11,18 +12,28 @@ const EmergencySOS = () => {
     const toast = useToast();
     const [isSending, setIsSending] = useState(false);
 
+    const [securityStaff, setSecurityStaff] = useState([]);
+
+    useEffect(() => {
+        if (!user?.societyId) return;
+        const unsubscribe = subscribeToSecurityStaff(user.societyId, (staff) => {
+            setSecurityStaff(staff);
+        });
+        return () => unsubscribe();
+    }, [user?.societyId]);
+
     const handleTriggerSOS = async (type) => {
         if (isSending) return;
         setIsSending(true);
         try {
             await triggerEmergency({
-                societyId: user?.societyId || 'default-society',
-                raisedBy: user?.id || user?.uid || 'resident',
-                raisedByName: user?.name || user?.email,
-                type,
-                title: `${type} SOS from resident`,
-                message: `Resident ${user?.name || ''} requested ${type.toLowerCase()} help.`,
-                role: 'resident',
+                societyId: user?.societyId,
+                residentUid: user?.uid,
+                residentName: user?.name,
+                flatNumber: user?.flatNumber || 'N/A',
+                message: `${type} SOS Alert`,
+                type: type,
+                status: 'ACTIVE',
             });
             toast.success('Emergency SOS sent to security and admin team.', 'SOS Sent');
         } catch (err) {
@@ -46,23 +57,41 @@ const EmergencySOS = () => {
                     </Button>
                 </div>
                 <div className="emergency-grid">
-                    <div className="emergency-contact-card security">
-                        <div className="emergency-contact-header">
-                            <div className="emergency-icon-container">
-                                <Shield />
+                    {/* Dynamic Security Officers List */}
+                    {securityStaff.length > 0 ? (
+                        securityStaff.map((officer) => (
+                            <div key={officer.id} className="emergency-contact-card security">
+                                <div className="emergency-contact-header">
+                                    <div className="emergency-icon-container">
+                                        <Shield />
+                                    </div>
+                                    <div className="emergency-contact-info">
+                                        <h3 className="emergency-contact-title">{officer.name}</h3>
+                                        <div className="emergency-contact-availability">{officer.status || 'On Duty'}</div>
+                                    </div>
+                                </div>
+                                <a href={`tel:${officer.phone}`} style={{ textDecoration: 'none' }}>
+                                    <button className="emergency-contact-button">
+                                        <Phone /> Call Now
+                                    </button>
+                                </a>
+                                <div className="emergency-contact-phone">{officer.phone}</div>
                             </div>
-                            <div className="emergency-contact-info">
-                                <h3 className="emergency-contact-title">Main Gate Security</h3>
-                                <div className="emergency-contact-availability">24/7 Available</div>
+                        ))
+                    ) : (
+                        <div className="emergency-contact-card">
+                            <div className="emergency-contact-header">
+                                <div className="emergency-icon-container">
+                                    <Shield />
+                                </div>
+                                <div className="emergency-contact-info">
+                                    <h3 className="emergency-contact-title">No Security Staff</h3>
+                                    <div className="emergency-contact-availability">Offline</div>
+                                </div>
                             </div>
+                            <div className="emergency-contact-phone">Not available</div>
                         </div>
-                        <a href="tel:+919876543210" style={{ textDecoration: 'none' }}>
-                            <button className="emergency-contact-button">
-                                <Phone /> Call Now
-                            </button>
-                        </a>
-                        <div className="emergency-contact-phone">+91 98765 43210</div>
-                    </div>
+                    )}
 
                     <div className="emergency-contact-card">
                         <div className="emergency-contact-header">
