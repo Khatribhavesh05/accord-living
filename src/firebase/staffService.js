@@ -66,22 +66,35 @@ export const subscribeToStaff = (societyId, callback) => {
 };
 
 export const subscribeToSecurityStaff = (societyId, callback) => {
+  if (!societyId) {
+    console.warn('[staffService] subscribeToSecurityStaff called without societyId');
+    callback([]);
+    return () => {};
+  }
+
   const q = query(
     collection(db, COLLECTION),
     where('societyId', '==', societyId),
-    where('role', '==', 'Security')
   );
+  console.log('[staffService] Subscribing to security staff', { societyId });
 
   return onSnapshot(
     q,
     (snapshot) => {
-      const staff = snapshot.docs.map(doc => ({
-        id: doc.id,
-        name: doc.data().name,
-        phone: doc.data().phone,
-        role: doc.data().role,
-        status: doc.data().status // "On Duty" or "Off Duty"
-      }));
+      const staff = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((member) => {
+          const roleValue = String(member.role || '').toLowerCase();
+          return roleValue.includes('security') || roleValue.includes('guard');
+        })
+        .map((member) => ({
+          id: member.id,
+          name: member.name,
+          phone: member.phone,
+          role: member.role,
+          status: member.status,
+        }));
+      console.log('[staffService] Security staff snapshot', { count: staff.length });
       callback(staff);
     },
     (error) => {
@@ -98,4 +111,3 @@ export const fetchStaffOnce = async (societyId) => {
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
-

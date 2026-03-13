@@ -56,19 +56,25 @@ export const getEmergencyById = async (emergencyId) => {
 };
 
 export const subscribeToActiveEmergencies = (societyId, callback) => {
+  if (!societyId) {
+    console.warn('[emergencyService] subscribeToActiveEmergencies called without societyId');
+    callback([]);
+    return () => {};
+  }
+
   const q = query(
     collection(db, COLLECTION),
     where('societyId', '==', societyId),
-    where('status', '==', 'ACTIVE'),
     orderBy('createdAt', 'desc')
   );
-  
-  return onSnapshot(q,
+
+  return onSnapshot(
+    q,
     (snapshot) => {
-      const emergencies = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const emergencies = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((item) => String(item.status || 'ACTIVE').toLowerCase() === 'active');
+      console.log('[emergencyService] Active emergencies snapshot', { societyId, count: emergencies.length });
       callback(emergencies);
     },
     (error) => {
@@ -107,4 +113,3 @@ export const fetchEmergenciesOnce = async (societyId) => {
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
-

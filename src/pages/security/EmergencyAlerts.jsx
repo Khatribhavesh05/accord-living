@@ -23,12 +23,28 @@ const EmergencyAlerts = () => {
     const [history, setHistory] = useState([]);
     const [hasBootstrapped, setHasBootstrapped] = useState(false);
     const [lastActiveCount, setLastActiveCount] = useState(0);
-    const societyId = user?.societyId || 'default-society';
+    const societyId = user?.societyId;
 
     useEffect(() => {
-        const unsubActive = subscribeToActiveEmergencies(societyId, setActiveAlerts);
-        const unsubHistory = subscribeToAllEmergencies(societyId, setHistory);
+        console.log('[EmergencyAlerts] Mount/subscription effect triggered', { societyId });
+        if (!societyId) {
+            console.warn('[EmergencyAlerts] Missing societyId, skipping emergency subscription');
+            return;
+        }
+        console.log('[EmergencyAlerts] Subscribing to active emergencies');
+        const unsubActive = subscribeToActiveEmergencies(societyId, (alerts) => {
+            console.log('[EmergencyAlerts] Active emergencies received', { count: alerts.length });
+            setActiveAlerts(alerts);
+        });
+
+        console.log('[EmergencyAlerts] Subscribing to emergency history');
+        const unsubHistory = subscribeToAllEmergencies(societyId, (fullHistory) => {
+            console.log('[EmergencyAlerts] Emergency history received', { count: fullHistory.length });
+            setHistory(fullHistory);
+        });
+
         return () => {
+            console.log('[EmergencyAlerts] Cleaning up emergency subscriptions');
             unsubActive && unsubActive();
             unsubHistory && unsubHistory();
         };
@@ -249,4 +265,3 @@ const EmergencyAlerts = () => {
 };
 
 export default EmergencyAlerts;
-

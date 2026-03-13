@@ -15,11 +15,23 @@ const EmergencySOS = () => {
     const [securityStaff, setSecurityStaff] = useState([]);
 
     useEffect(() => {
-        if (!user?.societyId) return;
+        console.log('[EmergencySOS] Staff subscription effect', { societyId: user?.societyId });
+        if (!user?.societyId) {
+            console.warn('[EmergencySOS] societyId missing, skipping security staff subscription');
+            setSecurityStaff([]);
+            return;
+        }
+
+        console.log('[EmergencySOS] Subscribing to security staff');
         const unsubscribe = subscribeToSecurityStaff(user.societyId, (staff) => {
+            console.log('[EmergencySOS] Security staff received', { count: staff.length, sample: staff[0] });
             setSecurityStaff(staff);
         });
-        return () => unsubscribe();
+
+        return () => {
+            console.log('[EmergencySOS] Cleaning up security staff subscription');
+            unsubscribe && unsubscribe();
+        };
     }, [user?.societyId]);
 
     const handleTriggerSOS = async (type) => {
@@ -156,4 +168,3 @@ const EmergencySOS = () => {
 };
 
 export default EmergencySOS;
-
