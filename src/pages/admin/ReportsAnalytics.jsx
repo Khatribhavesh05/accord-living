@@ -351,6 +351,7 @@ const ReportsAnalytics = () => {
     }, [bills, complaints, visitors]);
 
     const maintenanceRowsCount = maintenanceRows.length;
+    const lostFoundRows = [];
 
     const analyticsCards = [
         { label: 'Total Residents', value: String(residents.length), subtitle: residents.length ? 'Live resident count' : 'No data yet', trend: 'Live', trendUp: true, icon: Users },

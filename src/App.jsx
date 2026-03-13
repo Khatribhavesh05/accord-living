@@ -1,5 +1,28 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 16, fontFamily: 'sans-serif', background: '#f5f6fa' }}>
+                    <div style={{ fontSize: 40 }}>⚠️</div>
+                    <h2 style={{ margin: 0, color: '#1e293b' }}>Something went wrong</h2>
+                    <p style={{ margin: 0, color: '#64748b', fontSize: 14 }}>{this.state.error?.message || 'An unexpected error occurred.'}</p>
+                    <button onClick={() => { this.setState({ hasError: false, error: null }); window.history.back(); }} style={{ marginTop: 8, padding: '10px 24px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14 }}>Go Back</button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 import { ThemeProvider } from './context/ThemeContext';
 import { VisitorProvider } from './context/VisitorContext';
 import { AuthProvider } from './context/AuthContext';
@@ -24,6 +47,7 @@ function App() {
     // TODO: Firebase - set up onAuthStateChanged listener here
 
     return (
+        <ErrorBoundary>
         <ThemeProvider>
             <AuthProvider>
                 <VisitorProvider>
@@ -111,6 +135,7 @@ function App() {
             </VisitorProvider>
             </AuthProvider>
         </ThemeProvider>
+        </ErrorBoundary>
     );
 }
 
