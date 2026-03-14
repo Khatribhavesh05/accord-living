@@ -30,23 +30,11 @@
 ### 🛡️ Admin — Operations Command Center
 ![Admin Dashboard](https://raw.githubusercontent.com/Khatribhavesh05/accord-living/main/admin%20dashboard.png)
 
-### 👥 Admin — Resident Management
-![Resident Management](https://raw.githubusercontent.com/Khatribhavesh05/accord-living/main/resident%20managment.png)
-
-### 💰 Admin — Maintenance & Bills
-![Bill Management](https://raw.githubusercontent.com/Khatribhavesh05/accord-living/main/Maintenance%20%26%20Bills.png)
-
 ### 🏡 Resident Dashboard
 ![Resident Dashboard](https://raw.githubusercontent.com/Khatribhavesh05/accord-living/main/Resident%20Dashboard.png)
 
-### 🔖 Resident — Visitor Pre-Approval with QR
+### 🔖 Visitor Pre-Approval with QR Code
 ![Visitor Pre-Approval](https://raw.githubusercontent.com/Khatribhavesh05/accord-living/main/Visitor%20Pre-Approval.png)
-
-### 🔒 Security — Gateway & Attendance
-![Security Gateway](https://raw.githubusercontent.com/Khatribhavesh05/accord-living/main/Security%20Gateway.png)
-
-### 🛡️ Security Dashboard
-![Security Dashboard](https://raw.githubusercontent.com/Khatribhavesh05/accord-living/main/Security%20Dashboard.png)
 
 ---
 
