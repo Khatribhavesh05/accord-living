@@ -1,20 +1,34 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, X, AlertCircle, Info, CheckCircle } from 'lucide-react';
 import './NotificationPanel.css';
+import { useAuth } from '../../context/AuthContext';
+import { subscribeToAnnouncements } from '../../firebase/announcementService';
 import {
+    buildNotificationScope,
     clearNotificationsForCurrentUser,
     deleteNotificationById,
     getNotificationUpdateEvent,
+    isScopedNotificationRead,
     listNotificationsForCurrentUser,
     markNotificationAsRead,
+    markScopedNotificationAsRead,
+    markScopedNotificationsAsRead,
 } from '../../utils/notificationStorage';
 
 const NotificationPanel = () => {
     const [isOpen, setIsOpen] = useState(false);
-    const [notifications, setNotifications] = useState(() => listNotificationsForCurrentUser());
+    const [storedNotifications, setStoredNotifications] = useState(() => listNotificationsForCurrentUser());
+    const [residentAnnouncements, setResidentAnnouncements] = useState([]);
+    const [syncTick, setSyncTick] = useState(0);
+    const { user } = useAuth();
 
     const panelRef = useRef(null);
     const buttonRef = useRef(null);
+    const announcementScope = useMemo(
+        () => buildNotificationScope('resident-announcements', user?.uid || user?.id, user?.societyId),
+        [user?.uid, user?.id, user?.societyId]
+    );
+    const isResident = String(user?.role || '').toLowerCase() === 'resident';
 
     // Close panel when clicking outside
     useEffect(() => {
@@ -51,7 +65,10 @@ const NotificationPanel = () => {
     }, [isOpen]);
 
     useEffect(() => {
-        const syncNotifications = () => setNotifications(listNotificationsForCurrentUser());
+        const syncNotifications = () => {
+            setStoredNotifications(listNotificationsForCurrentUser());
+            setSyncTick((value) => value + 1);
+        };
         syncNotifications();
 
         const eventName = getNotificationUpdateEvent();
@@ -64,19 +81,59 @@ const NotificationPanel = () => {
         };
     }, []);
 
+    useEffect(() => {
+        if (!isResident || !user?.societyId) {
+            setResidentAnnouncements([]);
+            return () => {};
+        }
+
+        return subscribeToAnnouncements(user.societyId, (items) => {
+            const mapped = (items || []).map((item) => ({
+                id: `resident-announcement-${item.id}`,
+                sourceId: item.id,
+                source: 'announcement',
+                type: item.type === 'alert' ? 'alert' : item.type === 'meeting' ? 'success' : 'info',
+                title: item.title || 'Society update',
+                message: item.message || 'New notice has been posted for residents.',
+                read: isScopedNotificationRead(announcementScope, item.id),
+                created_at: item.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString(),
+                timestamp: item.displayDate || 'just now',
+            }));
+            setResidentAnnouncements(mapped);
+        });
+    }, [isResident, user?.societyId, announcementScope, syncTick]);
+
+    const notifications = useMemo(() => {
+        const merged = isResident
+            ? [...residentAnnouncements, ...storedNotifications]
+            : storedNotifications;
+
+        return merged.sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+    }, [isResident, residentAnnouncements, storedNotifications]);
+
     const handleMarkAsRead = (id) => {
-        markNotificationAsRead(id);
-        setNotifications(listNotificationsForCurrentUser());
+        const target = notifications.find((notif) => String(notif.id) === String(id));
+        if (target?.source === 'announcement') {
+            markScopedNotificationAsRead(announcementScope, target.sourceId);
+        } else {
+            markNotificationAsRead(id);
+        }
+        setStoredNotifications(listNotificationsForCurrentUser());
+        setSyncTick((value) => value + 1);
     };
 
     const handleDeleteNotification = (id) => {
         deleteNotificationById(id);
-        setNotifications(listNotificationsForCurrentUser());
+        setStoredNotifications(listNotificationsForCurrentUser());
     };
 
     const handleClearAll = () => {
+        if (isResident && residentAnnouncements.length > 0) {
+            markScopedNotificationsAsRead(announcementScope, residentAnnouncements.map((item) => item.sourceId));
+        }
         clearNotificationsForCurrentUser();
-        setNotifications([]);
+        setStoredNotifications([]);
+        setSyncTick((value) => value + 1);
         setIsOpen(false);
     };
 
@@ -163,14 +220,16 @@ const NotificationPanel = () => {
                                                     ✓
                                                 </button>
                                             )}
-                                            <button
-                                                className="action-btn delete"
-                                                onClick={() => handleDeleteNotification(notif.id)}
-                                                title="Delete notification"
-                                                aria-label="Delete notification"
-                                            >
-                                                <X size={14} />
-                                            </button>
+                                            {notif.source !== 'announcement' && (
+                                                <button
+                                                    className="action-btn delete"
+                                                    onClick={() => handleDeleteNotification(notif.id)}
+                                                    title="Delete notification"
+                                                    aria-label="Delete notification"
+                                                >
+                                                    <X size={14} />
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}

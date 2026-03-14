@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { PageHeader, Card, Button, StatusBadge } from '../../components/ui';
+import React, { useMemo, useState, useEffect } from 'react';
+import { PageHeader, Button, StatusBadge } from '../../components/ui';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { submitComplaint, subscribeToResidentComplaints } from '../../firebase/complaintService';
+import { CheckCircle2, CircleAlert, Clock3, ListTodo } from 'lucide-react';
 import './Complaints.css';
 
 const Complaints = () => {
@@ -12,6 +13,14 @@ const Complaints = () => {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({ category: 'Plumbing', description: '' });
+
+    const stats = useMemo(() => {
+        const total = complaints.length;
+        const resolved = complaints.filter((item) => String(item.status || '').toLowerCase() === 'resolved').length;
+        const open = Math.max(total - resolved, 0);
+        const latestDate = complaints[0]?.displayDate || 'No activity';
+        return { total, open, resolved, latestDate };
+    }, [complaints]);
 
     // Subscribe to resident's complaints
     useEffect(() => {
@@ -55,7 +64,10 @@ const Complaints = () => {
             <div className="complaints-grid">
                 {/* Section 1: Raise Complaint Form */}
                 <div className="complaint-form-card">
-                    <h3>Raise a Complaint</h3>
+                    <div className="complaint-section-head">
+                        <h3>Raise a Complaint</h3>
+                        <p>Log an issue and the admin team will track it in real time.</p>
+                    </div>
                     <form onSubmit={handleSubmit} className="complaint-form">
                         <div className="form-group">
                             <label>Category</label>
@@ -87,7 +99,30 @@ const Complaints = () => {
 
                 {/* Section 2: My Complaints List */}
                 <div className="complaints-list-card">
-                    <h3>My Complaints</h3>
+                    <div className="complaint-section-head">
+                        <h3>My Complaints</h3>
+                        <p>Track all updates from submission to resolution.</p>
+                    </div>
+
+                    <div className="complaints-stats-row">
+                        <div className="complaints-stat-pill">
+                            <ListTodo size={14} />
+                            <span>Total {stats.total}</span>
+                        </div>
+                        <div className="complaints-stat-pill open">
+                            <Clock3 size={14} />
+                            <span>Open {stats.open}</span>
+                        </div>
+                        <div className="complaints-stat-pill resolved">
+                            <CheckCircle2 size={14} />
+                            <span>Resolved {stats.resolved}</span>
+                        </div>
+                        <div className="complaints-stat-pill latest">
+                            <CircleAlert size={14} />
+                            <span>Latest {stats.latestDate}</span>
+                        </div>
+                    </div>
+
                     {loading ? (
                         <div className="complaints-loading">
                             <p>Loading your complaints...</p>

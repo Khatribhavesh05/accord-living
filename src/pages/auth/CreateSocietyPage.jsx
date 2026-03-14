@@ -95,7 +95,7 @@ const CreateSocietyPage = () => {
             <div className="auth-card auth-card-wide">
                 <div className="auth-logo">
                     <span className="auth-logo-icon">🏢</span>
-                    <h1 className="auth-brand">CIVIORA</h1>
+                    <h1 className="auth-brand">ACCORD LIVING</h1>
                     <p className="auth-tagline">Society Management Platform</p>
                 </div>
 

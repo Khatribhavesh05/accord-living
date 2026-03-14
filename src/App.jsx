@@ -45,6 +45,7 @@ function App() {
                             {/* Legacy redirects */}
                             <Route path="/admin-dashboard" element={<Navigate to="/admin/dashboard" replace />} />
                             <Route path="/resident-dashboard" element={<Navigate to="/resident/dashboard" replace />} />
+                            <Route path="/resident/pay" element={<Navigate to="/resident/bills" replace />} />
                             <Route path="/security-dashboard" element={<Navigate to="/security/dashboard" replace />} />
                             <Route
                                 path="/admin"
@@ -92,7 +93,7 @@ function App() {
                             <Route
                                 path="/security"
                                 element={
-                                    <ProtectedRoute allowedRoles={['security']}>
+                                    <ProtectedRoute allowedRoles={['security', 'admin']}>
                                         <SecurityLayout />
                                     </ProtectedRoute>
                                 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Building2, DollarSign, Zap, Users, Package2, Bell, DownloadCloud,
-  Plus, Edit2, Trash2, ChevronDown
+  Plus, Edit2, Trash2
 } from 'lucide-react';
 import PageHeader from '../../components/ui/PageHeader';
 import SettingsTabs from '../../components/ui/SettingsTabs';
@@ -9,6 +9,11 @@ import Modal from '../../components/ui/Modal';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../components/ui/Toast';
 import { saveAdminSettings, subscribeAdminSettings } from '../../firebase/appSettingsService';
+import { subscribeToAllBills } from '../../firebase/billService';
+import { subscribeToAllComplaints } from '../../firebase/complaintService';
+import { subscribeToAnnouncements } from '../../firebase/announcementService';
+import { subscribeToAllVisitors } from '../../firebase/visitorService';
+import { subscribeToResidents } from '../../firebase/residentService';
 import './AdminSettings.css';
 
 const AdminSettings = () => {
@@ -90,6 +95,12 @@ const AdminSettings = () => {
   const [expenseForm, setExpenseForm] = useState({ name: '', budget: '' });
   const [roleForm, setRoleForm] = useState({ name: '', email: '', role: 'Admin', permissions: [] });
 
+  const [billsData, setBillsData] = useState([]);
+  const [complaintsData, setComplaintsData] = useState([]);
+  const [announcementsData, setAnnouncementsData] = useState([]);
+  const [visitorsData, setVisitorsData] = useState([]);
+  const [residentsData, setResidentsData] = useState([]);
+
   useEffect(() => {
     const unsubscribe = subscribeAdminSettings(societyId, (settings) => {
       if (settings?.societyProfile) setSocietyProfile(settings.societyProfile);
@@ -101,6 +112,22 @@ const AdminSettings = () => {
       if (settings?.notificationSettings) setNotificationSettings(settings.notificationSettings);
     });
     return () => unsubscribe && unsubscribe();
+  }, [societyId]);
+
+  useEffect(() => {
+    const unsubBills = subscribeToAllBills(societyId, setBillsData);
+    const unsubComplaints = subscribeToAllComplaints(societyId, setComplaintsData);
+    const unsubAnnouncements = subscribeToAnnouncements(societyId, setAnnouncementsData);
+    const unsubVisitors = subscribeToAllVisitors(societyId, setVisitorsData);
+    const unsubResidents = subscribeToResidents(societyId, setResidentsData);
+
+    return () => {
+      unsubBills && unsubBills();
+      unsubComplaints && unsubComplaints();
+      unsubAnnouncements && unsubAnnouncements();
+      unsubVisitors && unsubVisitors();
+      unsubResidents && unsubResidents();
+    };
   }, [societyId]);
 
   const saveSection = async (payload, successMessage) => {
@@ -123,6 +150,163 @@ const AdminSettings = () => {
 
   const handlePaymentChange = (key) => {
     setPaymentSettings(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const buildCsv = (rows) => {
+    if (!rows.length) return '';
+    const headers = Object.keys(rows[0]);
+    const escapeValue = (value) => {
+      if (value === null || value === undefined) return '';
+      const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    };
+    const csvRows = [
+      headers.join(','),
+      ...rows.map((row) => headers.map((header) => escapeValue(row[header])).join(',')),
+    ];
+    return csvRows.join('\n');
+  };
+
+  const downloadCsv = (fileName, rows) => {
+    if (!rows.length) {
+      toast.error('No data available to export yet', 'Empty Report');
+      return;
+    }
+    const csv = buildCsv(rows);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`${fileName} downloaded`, 'Export Ready');
+  };
+
+  const getPaymentRecords = () => billsData.flatMap((bill) =>
+    (bill.payments || []).map((payment) => ({
+      billId: bill.id,
+      billMonth: bill.billMonth || '-',
+      billYear: bill.billYear || '-',
+      residentName: payment.residentName || '-',
+      residentFlat: payment.residentFlat || '-',
+      amount: payment.amount || 0,
+      status: payment.status || 'Pending',
+      paidDate: payment.paidDate || '-',
+    }))
+  );
+
+  const getPendingRecords = () => billsData.map((bill) => {
+    const totalAmount = Number(bill.totalAmount) || 0;
+    const collectedAmount = (bill.payments || []).reduce(
+      (sum, payment) => sum + (payment.status === 'Paid' ? Number(payment.amount) || 0 : 0),
+      0,
+    );
+    return {
+      billId: bill.id,
+      billMonth: bill.billMonth || '-',
+      billYear: bill.billYear || '-',
+      totalAmount,
+      collectedAmount,
+      pendingAmount: Math.max(totalAmount - collectedAmount, 0),
+      dueDate: bill.dueDate || '-',
+    };
+  }).filter((row) => row.pendingAmount > 0);
+
+  const exportMaintenanceCollection = () => {
+    const rows = billsData.map((bill) => {
+      const totalAmount = Number(bill.totalAmount) || 0;
+      const collectedAmount = (bill.payments || []).reduce(
+        (sum, payment) => sum + (payment.status === 'Paid' ? Number(payment.amount) || 0 : 0),
+        0,
+      );
+      const pendingAmount = Math.max(totalAmount - collectedAmount, 0);
+      const collectionRate = totalAmount > 0 ? `${Math.round((collectedAmount / totalAmount) * 100)}%` : '0%';
+      return {
+        billId: bill.id,
+        billMonth: bill.billMonth || '-',
+        billYear: bill.billYear || '-',
+        totalAmount,
+        collectedAmount,
+        pendingAmount,
+        collectionRate,
+      };
+    });
+    downloadCsv('maintenance_collection_report.csv', rows);
+  };
+
+  const exportExpenseReport = () => {
+    const rows = expenseCategories.map((category) => ({
+      categoryId: category.id,
+      categoryName: category.name,
+      monthlyBudget: category.budget,
+      annualBudgetEstimate: (Number(category.budget) || 0) * 12,
+    }));
+    downloadCsv('expense_report.csv', rows);
+  };
+
+  const exportPaymentSummary = () => {
+    downloadCsv('payment_summary.csv', getPaymentRecords());
+  };
+
+  const exportOutstandingDues = () => {
+    downloadCsv('outstanding_dues.csv', getPendingRecords());
+  };
+
+  const exportResidents = () => {
+    const rows = residentsData.map((resident) => ({
+      residentId: resident.id,
+      name: resident.name || '-',
+      email: resident.email || '-',
+      phone: resident.phone || '-',
+      flatNumber: resident.flatNumber || resident.flatNo || '-',
+      block: resident.block || '-',
+      ownershipType: resident.ownershipType || '-',
+    }));
+    downloadCsv('residents_export.csv', rows);
+  };
+
+  const exportComplaints = () => {
+    const rows = complaintsData.map((complaint) => ({
+      complaintId: complaint.id,
+      category: complaint.category || '-',
+      status: complaint.status || '-',
+      residentName: complaint.residentName || '-',
+      residentFlat: complaint.residentFlat || '-',
+      date: complaint.displayDate || '-',
+      description: complaint.description || '-',
+    }));
+    downloadCsv('complaints_export.csv', rows);
+  };
+
+  const exportAnnouncements = () => {
+    const rows = announcementsData.map((announcement) => ({
+      announcementId: announcement.id,
+      title: announcement.title || '-',
+      type: announcement.type || '-',
+      category: announcement.category || '-',
+      date: announcement.displayDate || '-',
+      message: announcement.message || '-',
+    }));
+    downloadCsv('announcements_export.csv', rows);
+  };
+
+  const exportVisitors = () => {
+    const rows = visitorsData.map((visitor) => ({
+      visitorId: visitor.id,
+      name: visitor.name || '-',
+      phone: visitor.phone || '-',
+      visitType: visitor.visitType || visitor.type || '-',
+      flatNumber: visitor.flatNumber || '-',
+      hostName: visitor.hostName || '-',
+      status: visitor.status || '-',
+      entryTime: visitor.entryTime || '-',
+      exitTime: visitor.exitTime || '-',
+      createdDate: visitor.createdDate || '-',
+    }));
+    downloadCsv('visitors_export.csv', rows);
   };
 
   const openAddExpenseModal = () => {
@@ -167,6 +351,63 @@ const AdminSettings = () => {
     const next = expenseCategories.filter(cat => cat.id !== id);
     setExpenseCategories(next);
     saveSection({ expenseCategories: next }, 'Expense category removed');
+  };
+
+  const openAddRoleModal = () => {
+    setRoleForm({ name: '', email: '', role: 'Admin', permissions: [] });
+    setCurrentEditingItem(null);
+    setModals((prev) => ({ ...prev, addRole: true }));
+  };
+
+  const openEditRoleModal = (adminUser) => {
+    setRoleForm({
+      name: adminUser.name || '',
+      email: adminUser.email || '',
+      role: adminUser.role || 'Admin',
+      permissions: adminUser.permissions || [],
+    });
+    setCurrentEditingItem(adminUser);
+    setModals((prev) => ({ ...prev, editRole: true }));
+  };
+
+  const toggleRolePermission = (permission) => {
+    setRoleForm((prev) => ({
+      ...prev,
+      permissions: prev.permissions.includes(permission)
+        ? prev.permissions.filter((item) => item !== permission)
+        : [...prev.permissions, permission],
+    }));
+  };
+
+  const saveRole = () => {
+    if (!roleForm.name.trim() || !roleForm.email.trim()) {
+      toast.error('Name and email are required', 'Validation');
+      return;
+    }
+
+    const cleanedRole = {
+      name: roleForm.name.trim(),
+      email: roleForm.email.trim(),
+      role: roleForm.role,
+      permissions: roleForm.permissions.length ? roleForm.permissions : ['All'],
+    };
+
+    const nextUsers = currentEditingItem
+      ? adminUsers.map((item) => (item.id === currentEditingItem.id ? { ...item, ...cleanedRole } : item))
+      : [
+        ...adminUsers,
+        { id: Math.max(...adminUsers.map((item) => Number(item.id) || 0), 0) + 1, ...cleanedRole },
+      ];
+
+    setAdminUsers(nextUsers);
+    saveSection({ adminUsers: nextUsers }, currentEditingItem ? 'Admin user updated' : 'Admin user added');
+    setModals((prev) => ({ ...prev, addRole: false, editRole: false }));
+  };
+
+  const deleteRole = (id) => {
+    const nextUsers = adminUsers.filter((item) => item.id !== id);
+    setAdminUsers(nextUsers);
+    saveSection({ adminUsers: nextUsers }, 'Admin user removed');
   };
 
   const handleNotificationChange = (key) => {
@@ -481,10 +722,10 @@ const AdminSettings = () => {
                     </td>
                     <td>{user.permissions.join(', ')}</td>
                     <td>
-                      <button className="action-btn edit-btn" title="Edit">
+                      <button className="action-btn edit-btn" title="Edit" onClick={() => openEditRoleModal(user)}>
                         <Edit2 size={16} />
                       </button>
-                      <button className="action-btn delete-btn" title="Remove">
+                      <button className="action-btn delete-btn" title="Remove" onClick={() => deleteRole(user.id)}>
                         <Trash2 size={16} />
                       </button>
                     </td>
@@ -493,7 +734,7 @@ const AdminSettings = () => {
               </tbody>
             </table>
           </div>
-          <button className="settings-button settings-button-primary" style={{ marginTop: '16px' }}>
+          <button className="settings-button settings-button-primary" style={{ marginTop: '16px' }} onClick={openAddRoleModal}>
             <Plus size={16} style={{ marginRight: '6px' }} />
             Add Admin User
           </button>
@@ -655,19 +896,19 @@ const AdminSettings = () => {
           <div className="reports-section">
             <h3>Financial Reports</h3>
             <div className="report-grid">
-              <button className="report-btn">
+              <button className="report-btn" onClick={exportMaintenanceCollection}>
                 <DownloadCloud size={20} />
                 <span>Maintenance Collection Report</span>
               </button>
-              <button className="report-btn">
+              <button className="report-btn" onClick={exportExpenseReport}>
                 <DownloadCloud size={20} />
                 <span>Expense Report</span>
               </button>
-              <button className="report-btn">
+              <button className="report-btn" onClick={exportPaymentSummary}>
                 <DownloadCloud size={20} />
                 <span>Payment Summary</span>
               </button>
-              <button className="report-btn">
+              <button className="report-btn" onClick={exportOutstandingDues}>
                 <DownloadCloud size={20} />
                 <span>Outstanding Dues</span>
               </button>
@@ -676,19 +917,19 @@ const AdminSettings = () => {
           <div className="reports-section">
             <h3>Data Export</h3>
             <div className="report-grid">
-              <button className="report-btn">
+              <button className="report-btn" onClick={exportResidents}>
                 <DownloadCloud size={20} />
                 <span>Export All Residents</span>
               </button>
-              <button className="report-btn">
+              <button className="report-btn" onClick={exportComplaints}>
                 <DownloadCloud size={20} />
                 <span>Export Complaints</span>
               </button>
-              <button className="report-btn">
+              <button className="report-btn" onClick={exportAnnouncements}>
                 <DownloadCloud size={20} />
                 <span>Export Announcements</span>
               </button>
-              <button className="report-btn">
+              <button className="report-btn" onClick={exportVisitors}>
                 <DownloadCloud size={20} />
                 <span>Export Vehicles & Visitors</span>
               </button>
@@ -786,6 +1027,136 @@ const AdminSettings = () => {
             <button
               className="settings-button settings-button-secondary"
               onClick={() => setModals(prev => ({ ...prev, editExpense: false }))}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={modals.addRole}
+        title="Add Admin User"
+        onClose={() => setModals((prev) => ({ ...prev, addRole: false }))}
+      >
+        <div className="modal-form">
+          <div>
+            <label className="settings-label">Name *</label>
+            <input
+              type="text"
+              className="settings-input"
+              value={roleForm.name}
+              onChange={(e) => setRoleForm((prev) => ({ ...prev, name: e.target.value }))}
+              placeholder="Enter full name"
+            />
+          </div>
+          <div>
+            <label className="settings-label">Email *</label>
+            <input
+              type="email"
+              className="settings-input"
+              value={roleForm.email}
+              onChange={(e) => setRoleForm((prev) => ({ ...prev, email: e.target.value }))}
+              placeholder="Enter email"
+            />
+          </div>
+          <div>
+            <label className="settings-label">Role</label>
+            <select
+              className="settings-select"
+              value={roleForm.role}
+              onChange={(e) => setRoleForm((prev) => ({ ...prev, role: e.target.value }))}
+            >
+              <option value="Admin">Admin</option>
+              <option value="Treasurer">Treasurer</option>
+              <option value="Secretary">Secretary</option>
+            </select>
+          </div>
+          <div>
+            <label className="settings-label">Permissions</label>
+            <div className="settings-permissions-grid">
+              {['All', 'Payments', 'Reports', 'Complaints', 'Announcements', 'Residents'].map((permission) => (
+                <label key={permission} className="settings-permission-item">
+                  <input
+                    type="checkbox"
+                    className="settings-checkbox"
+                    checked={roleForm.permissions.includes(permission)}
+                    onChange={() => toggleRolePermission(permission)}
+                  />
+                  <span>{permission}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="settings-button-group" style={{ marginTop: '20px' }}>
+            <button className="settings-button settings-button-primary" onClick={saveRole}>Add Admin User</button>
+            <button
+              className="settings-button settings-button-secondary"
+              onClick={() => setModals((prev) => ({ ...prev, addRole: false }))}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={modals.editRole}
+        title="Edit Admin User"
+        onClose={() => setModals((prev) => ({ ...prev, editRole: false }))}
+      >
+        <div className="modal-form">
+          <div>
+            <label className="settings-label">Name *</label>
+            <input
+              type="text"
+              className="settings-input"
+              value={roleForm.name}
+              onChange={(e) => setRoleForm((prev) => ({ ...prev, name: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="settings-label">Email *</label>
+            <input
+              type="email"
+              className="settings-input"
+              value={roleForm.email}
+              onChange={(e) => setRoleForm((prev) => ({ ...prev, email: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="settings-label">Role</label>
+            <select
+              className="settings-select"
+              value={roleForm.role}
+              onChange={(e) => setRoleForm((prev) => ({ ...prev, role: e.target.value }))}
+            >
+              <option value="Admin">Admin</option>
+              <option value="Treasurer">Treasurer</option>
+              <option value="Secretary">Secretary</option>
+            </select>
+          </div>
+          <div>
+            <label className="settings-label">Permissions</label>
+            <div className="settings-permissions-grid">
+              {['All', 'Payments', 'Reports', 'Complaints', 'Announcements', 'Residents'].map((permission) => (
+                <label key={permission} className="settings-permission-item">
+                  <input
+                    type="checkbox"
+                    className="settings-checkbox"
+                    checked={roleForm.permissions.includes(permission)}
+                    onChange={() => toggleRolePermission(permission)}
+                  />
+                  <span>{permission}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="settings-button-group" style={{ marginTop: '20px' }}>
+            <button className="settings-button settings-button-primary" onClick={saveRole}>Save Changes</button>
+            <button
+              className="settings-button settings-button-secondary"
+              onClick={() => setModals((prev) => ({ ...prev, editRole: false }))}
             >
               Cancel
             </button>

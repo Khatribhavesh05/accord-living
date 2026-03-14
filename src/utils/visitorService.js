@@ -9,7 +9,7 @@ export const VISITOR_STATUS = {
 };
 
 const DEFAULT_SETTINGS = {
-  society_name: 'CIVIORA',
+  society_name: 'ACCORD LIVING',
   require_resident_approval: true,
   enable_qr_pass: true,
   enable_photo_capture: true,
@@ -53,9 +53,9 @@ export const getResidentFlat = () => {
   );
 };
 
-const LS_VISITORS = 'civiora_visitors';
-const LS_SETTINGS = 'civiora_visitor_settings';
-const LS_BLACKLIST = 'civiora_visitor_blacklist';
+const LS_VISITORS = 'accord-living_visitors';
+const LS_SETTINGS = 'accord-living_visitor_settings';
+const LS_BLACKLIST = 'accord-living_visitor_blacklist';
 
 const lsGetVisitors = () => { try { return JSON.parse(localStorage.getItem(LS_VISITORS)) || []; } catch { return []; } };
 const lsSetVisitors = (v) => localStorage.setItem(LS_VISITORS, JSON.stringify(v));
@@ -304,6 +304,6 @@ export const downloadTextFile = (fileName, content, mimeType) => {
 export const subscribeVisitorRealtime = (onChange) => {
   // TODO: Firebase - subscribe to Firestore visitors/settings/logs with onSnapshot
   const handler = () => onChange({ eventType: 'localStorage' });
-  window.addEventListener('civiora-visitors-updated', handler);
-  return () => window.removeEventListener('civiora-visitors-updated', handler);
+  window.addEventListener('accord-living-visitors-updated', handler);
+  return () => window.removeEventListener('accord-living-visitors-updated', handler);
 };

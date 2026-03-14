@@ -27,6 +27,11 @@ const defaultAdminSettings = {
   },
   expenseCategories: [],
   adminUsers: [],
+  emergencyContacts: [
+    { name: 'Ambulance', number: '108', type: 'Medical' },
+    { name: 'Fire Brigade', number: '101', type: 'Fire' },
+    { name: 'Police Station', number: '100', type: 'Security' },
+  ],
   lostFoundSettings: {
     enableFeature: false,
     requireApproval: false,
@@ -107,6 +112,7 @@ export const subscribeAdminSettings = (societyId, callback) => {
       paymentSettings: mergeWithDefaults(defaultAdminSettings.paymentSettings, data.paymentSettings),
       expenseCategories: Array.isArray(data.expenseCategories) ? data.expenseCategories : [],
       adminUsers: Array.isArray(data.adminUsers) ? data.adminUsers : [],
+      emergencyContacts: Array.isArray(data.emergencyContacts) ? data.emergencyContacts : defaultAdminSettings.emergencyContacts,
       lostFoundSettings: mergeWithDefaults(defaultAdminSettings.lostFoundSettings, data.lostFoundSettings),
       notificationSettings: mergeWithDefaults(defaultAdminSettings.notificationSettings, data.notificationSettings),
     });

@@ -8,14 +8,14 @@ import { subscribeToSociety } from '../firebase/societyService';
 import '../styles/admin-style.css';
 import {
     LayoutDashboard, Receipt, CreditCard, History, MessageSquare,
-    Bell, Settings, UserCheck,
-    Building, Search, Store, Calendar, X, ChevronDown
+    Bell, Phone, Settings, UserCheck,
+    Building, Store, Calendar, X, ChevronDown
 } from 'lucide-react';
 
 const ResidentLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth > 768 : true));
     const [profileOpen, setProfileOpen] = useState(false);
-    const [societyName, setSocietyName] = useState('CIVIORA');
+    const [societyName, setSocietyName] = useState('ACCORD LIVING');
     const navigate = useNavigate();
     const location = useLocation();
     const toast = useToast();
@@ -45,12 +45,12 @@ const ResidentLayout = () => {
 
     useEffect(() => {
         if (!user?.societyId) {
-            setSocietyName(user?.societyName || 'CIVIORA');
+            setSocietyName(user?.societyName || 'ACCORD LIVING');
             return () => {};
         }
 
         return subscribeToSociety(user.societyId, (society) => {
-            setSocietyName(society?.name || user?.societyName || 'CIVIORA');
+            setSocietyName(society?.name || user?.societyName || 'ACCORD LIVING');
         });
     }, [user?.societyId, user?.societyName]);
 
@@ -82,8 +82,7 @@ const ResidentLayout = () => {
             title: "Community",
             items: [
                 { name: 'Visitor Pre-Approval', path: '/resident/visitor-approval', icon: <UserCheck size={20} /> },
-                { name: 'Emergency SOS', path: '/resident/emergency-sos', icon: <Bell size={20} /> },
-                { name: 'Settings', path: '/resident/settings', icon: <Settings size={20} /> },
+                { name: 'Contacts', path: '/resident/emergency-sos', icon: <Phone size={20} /> },
             ]
         }
     ];
@@ -99,7 +98,7 @@ const ResidentLayout = () => {
                             </div>
                             <div className="brand-copy">
                                 <h2 id="societyName">{societyName}</h2>
-                                <span className="brand-meta">CIVIORA Resident</span>
+                                <span className="brand-meta">ACCORD LIVING Resident</span>
                             </div>
                         </div>
                         <div className="mobile-close-btn" onClick={() => setSidebarOpen(false)}>
@@ -129,17 +128,16 @@ const ResidentLayout = () => {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <button
-                        className={`theme-shortcut ${isDarkMode ? 'active' : ''}`}
-                        onClick={toggleDarkMode}
-                        aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                        title={isDarkMode ? 'Light mode' : 'Dark mode'}
+                    <NavLink
+                        to="/resident/settings"
+                        className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                        style={{ width: 'calc(100% - 48px)', marginBottom: '8px' }}
                     >
-                        <span className="theme-shortcut-symbol" aria-hidden="true">
-                            {isDarkMode ? '🌙' : '☀️'}
-                        </span>
-                    </button>
+                        <span className="icon"><Settings size={20} /></span>
+                        Settings
+                    </NavLink>
                 </div>
+
             </aside>
 
             <div
@@ -161,10 +159,14 @@ const ResidentLayout = () => {
                     </div>
 
                     <div className="topbar-right">
-                        <div className="search-bar">
-                            <Search size={16} className="search-icon" />
-                            <input type="text" placeholder="Search society..." className="search-input" />
-                        </div>
+                        <button
+                            className="btn-icon"
+                            onClick={toggleDarkMode}
+                            aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                            title={isDarkMode ? 'Light mode' : 'Dark mode'}
+                        >
+                            <span aria-hidden="true">{isDarkMode ? '🌙' : '☀️'}</span>
+                        </button>
 
                         <NotificationPanel />
 

@@ -3,7 +3,7 @@
  * Opens a formatted HTML invoice in a new window for print/save.
  */
 
-export const downloadInvoice = (bill, residentName, flatNumber, societyName = 'CIVIORA') => {
+export const downloadInvoice = (bill, residentName, flatNumber, societyName = 'ACCORD LIVING') => {
     const invoiceHtml = `
 <!DOCTYPE html>
 <html>

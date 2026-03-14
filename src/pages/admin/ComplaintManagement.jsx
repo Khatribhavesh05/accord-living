@@ -96,10 +96,11 @@ const ComplaintManagement = () => {
     // Inline Styles for Dashboard
     const styles = {
         pageContainer: {
-            maxWidth: '1280px',
+            maxWidth: '1320px',
             margin: '0 auto',
             width: '100%',
-            padding: '0 24px',
+            padding: '0 16px',
+            boxSizing: 'border-box',
         },
         statsGrid: {
             width: '100%'
@@ -154,7 +155,7 @@ const ComplaintManagement = () => {
             flexWrap: 'wrap',
             gap: '16px',
             justifyContent: 'space-between',
-            alignItems: 'center',
+            alignItems: 'stretch',
             marginBottom: '24px',
             backgroundColor: 'white',
             padding: '16px 24px',
@@ -163,32 +164,26 @@ const ComplaintManagement = () => {
             boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
         },
         searchBox: {
-            position: 'relative',
-            flex: '1',
-            minWidth: '300px'
+            flex: '1 1 380px',
+            minWidth: '260px'
         },
         searchInput: {
             width: '100%',
-            height: '42px', 
-            padding: '0 16px 0 40px',
-            borderRadius: '8px',
-            border: '1px solid #d1d5db',
+            height: '46px', 
+            padding: '0 14px',
+            border: 'none',
             fontSize: '14px',
             outline: 'none',
-            transition: 'border-color 0.2s'
-        },
-        searchIcon: {
-            position: 'absolute',
-            left: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#9ca3af',
-            pointerEvents: 'none'
+            background: 'transparent',
+            color: '#111827'
         },
         filterGroup: {
             display: 'flex',
             gap: '12px',
-            alignItems: 'center'
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+            flex: '1 1 380px'
         },
         filterSelect: {
             height: '42px',
@@ -197,9 +192,10 @@ const ComplaintManagement = () => {
             border: '1px solid #d1d5db',
             fontSize: '14px',
             outline: 'none',
-            minWidth: '150px',
+            minWidth: '170px',
             backgroundColor: 'white',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            flexShrink: 0,
         },
         tableContainer: {
             backgroundColor: 'white',
@@ -280,19 +276,33 @@ const ComplaintManagement = () => {
             </div>
 
             {/* Controls & Filter Bar */}
-            <div style={styles.controlsBar}>
-                <div style={styles.searchBox}>
-                    <Search size={18} style={styles.searchIcon} />
-                    <input 
-                        type="text" 
-                        placeholder="Search by ID, Resident, Category..." 
-                        style={styles.searchInput}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                <div className="cm-controls-bar" style={styles.controlsBar}>
+                <div className="cm-search-box" style={styles.searchBox}>
+                    <div className="cm-search-shell">
+                        <span className="cm-search-icon" aria-hidden="true"><Search size={18} /></span>
+                        <input 
+                            type="text"
+                            aria-label="Search complaints"
+                            placeholder="Search by complaint ID, resident name, or category"
+                            style={styles.searchInput}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        {searchTerm ? (
+                            <button
+                                type="button"
+                                className="cm-search-clear"
+                                onClick={() => setSearchTerm('')}
+                                aria-label="Clear search"
+                            >
+                                Clear
+                            </button>
+                        ) : null}
+                    </div>
                 </div>
-                <div style={styles.filterGroup}>
+                <div className="cm-filter-group" style={styles.filterGroup}>
                     <select 
+                        className="cm-filter-select"
                         style={styles.filterSelect}
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
@@ -303,15 +313,17 @@ const ComplaintManagement = () => {
                         <option value="Resolved">Resolved</option>
                     </select>
                     <Button 
+                        className="cm-action-btn"
                         variant="outline" 
-                        style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 16px' }} 
+                        style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 16px', whiteSpace: 'nowrap', flexShrink: 0 }} 
                         icon={<Filter size={16} />}
                     >
                         Advanced
                     </Button>
                     <Button 
+                        className="cm-action-btn"
                         variant="secondary" 
-                        style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 16px' }} 
+                        style={{ height: '42px', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 16px', whiteSpace: 'nowrap', flexShrink: 0 }} 
                         icon={<Download size={16} />}
                     >
                         Export CSV
@@ -328,17 +340,17 @@ const ComplaintManagement = () => {
                 {loading ? (
                     <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Loading complaints...</div>
                 ) : (
-                <div style={{ overflowX: 'auto' }}>
-                    <table className="table" style={{ width: '100%', minWidth: '1000px', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                <div className="cm-table-scroll" style={{ overflowX: 'auto' }}>
+                    <table className="table cm-table" style={{ width: '100%', minWidth: '920px', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
-                                <th style={{ width: '12%', padding: '16px 24px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em' }}>ID / Date</th>
-                                <th style={{ width: '18%', padding: '16px 24px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em' }}>Resident</th>
-                                <th style={{ width: '14%', padding: '16px 24px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em' }}>Category</th>
-                                <th style={{ width: '26%', padding: '16px 24px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em' }}>Description</th>
-                                <th style={{ width: '10%', padding: '16px 24px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em' }}>Priority</th>
-                                <th style={{ width: '10%', padding: '16px 24px', textAlign: 'center', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em' }}>Status</th>
-                                <th style={{ width: '10%', padding: '16px 24px', textAlign: 'right', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em' }}>Actions</th>
+                                <th style={{ width: '12%', padding: '16px 20px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.04em' }}>ID / Date</th>
+                                <th style={{ width: '18%', padding: '16px 20px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.04em' }}>Resident</th>
+                                <th style={{ width: '14%', padding: '16px 20px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.04em' }}>Category</th>
+                                <th style={{ width: '24%', padding: '16px 20px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.04em' }}>Description</th>
+                                <th style={{ width: '11%', padding: '16px 20px', textAlign: 'left', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.04em' }}>Priority</th>
+                                <th style={{ width: '11%', padding: '16px 20px', textAlign: 'center', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.04em' }}>Status</th>
+                                <th style={{ width: '10%', padding: '16px 20px', textAlign: 'right', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.04em' }}>Actions</th>
                             </tr>
                         </thead>
                         <tbody>

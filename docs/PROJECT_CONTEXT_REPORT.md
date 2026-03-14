@@ -8,7 +8,7 @@
 ## 1. PROJECT OVERVIEW
 
 ### 1.1 Vision & Goal
-**Civiora** (branded as **Accord Living**) is a **Society Management System** for a hackathon demo.
+**ACCORD LIVING** (branded as **Accord Living**) is a **Society Management System** for a hackathon demo.
 
 **Core Concept:** Real-time, multi-portal property management system with 3 user roles interacting through live bidirectional data sync.
 

@@ -213,7 +213,7 @@ git log --oneline -3
 ## DEMO NARRATIVE (For Judges)
 
 ### Introduction
-> "Civiora is a real-time society management system. Notice we have three portal tabs open simultaneously - Admin, Resident, and Security. Every action is synchronized across all portals with <1 second latency using Firebase Firestore subscriptions."
+> "ACCORD LIVING is a real-time society management system. Notice we have three portal tabs open simultaneously - Admin, Resident, and Security. Every action is synchronized across all portals with <1 second latency using Firebase Firestore subscriptions."
 
 ### Flow 1: Announcements
 > "Admin posts a notice... [Admin clicks 'Publish']... and in less than a second, the Resident portal automatically updates with the new announcement - no page refresh, no button clicks needed. Real-time collaboration."
