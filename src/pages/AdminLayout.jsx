@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import NotificationPanel from '../components/ui/NotificationPanel';
 import { useToast } from '../components/ui/Toast';
 import {
-    Settings, Bell, Search, ChevronDown,
+    Settings, Bell, ChevronDown,
     X, LayoutDashboard, Users, UserCog, Building,
     FileText, ShieldAlert, BadgeIndianRupee, Package,
     MailWarning, Compass, BarChart, Store, Calendar
@@ -11,12 +11,14 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { subscribeToSociety } from '../firebase/societyService';
+import { subscribeToAnnouncements } from '../firebase/announcementService';
 import '../styles/admin-style.css';
 
 const AdminLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== 'undefined' ? window.innerWidth > 768 : true));
     const [profileOpen, setProfileOpen] = useState(false);
-    const [societyName, setSocietyName] = useState('CIVIORA');
+    const [societyName, setSocietyName] = useState('ACCORD LIVING');
+    const [noticesCount, setNoticesCount] = useState(0);
     const navigate = useNavigate();
     const location = useLocation();
     const toast = useToast();
@@ -38,14 +40,25 @@ const AdminLayout = () => {
 
     useEffect(() => {
         if (!user?.societyId) {
-            setSocietyName(user?.societyName || 'CIVIORA');
+            setSocietyName(user?.societyName || 'ACCORD LIVING');
             return () => {};
         }
 
         return subscribeToSociety(user.societyId, (society) => {
-            setSocietyName(society?.name || user?.societyName || 'CIVIORA');
+            setSocietyName(society?.name || user?.societyName || 'ACCORD LIVING');
         });
     }, [user?.societyId, user?.societyName]);
+
+    useEffect(() => {
+        if (!user?.societyId) {
+            setNoticesCount(0);
+            return () => {};
+        }
+
+        return subscribeToAnnouncements(user.societyId, (items) => {
+            setNoticesCount(Array.isArray(items) ? items.length : 0);
+        });
+    }, [user?.societyId]);
 
     const handleLogout = async (e) => {
         e.preventDefault();
@@ -76,7 +89,7 @@ const AdminLayout = () => {
         {
             title: "Operations",
             items: [
-                { name: 'Maintenance', icon: <FileText size={20} />, path: '/admin/maintenance' },
+                { name: 'Payments', icon: <BadgeIndianRupee size={20} />, path: '/admin/maintenance' },
                 { name: 'Complaints', icon: <MailWarning size={20} />, path: '/admin/complaints' },
             ]
         },
@@ -84,7 +97,7 @@ const AdminLayout = () => {
             title: "Security Logs",
             items: [
                 { name: 'Staff Attendance', icon: <FileText size={20} />, path: '/admin/attendance' },
-                { name: 'Emergency', icon: <ShieldAlert size={20} />, path: '/admin/emergency' },
+                { name: 'Contacts', icon: <ShieldAlert size={20} />, path: '/admin/emergency' },
             ]
         }
     ];
@@ -104,7 +117,7 @@ const AdminLayout = () => {
                             </div>
                             <div className="brand-copy">
                                 <h2 id="societyName">{societyName}</h2>
-                                <span className="brand-meta">CIVIORA Admin</span>
+                                <span className="brand-meta">ACCORD LIVING Admin</span>
                             </div>
                         </div>
                         {/* Mobile close button inside brand header */}
@@ -128,7 +141,7 @@ const AdminLayout = () => {
                                 >
                                     <span className="icon">{item.icon}</span>
                                     {item.name}
-                                    {item.path === '/admin/notices' && <span className="nav-badge">3</span>}
+                                    {item.path === '/admin/notices' && noticesCount > 0 && <span className="nav-badge">{noticesCount > 99 ? '99+' : noticesCount}</span>}
                                 </NavLink>
                             ))}
                         </div>
@@ -144,17 +157,6 @@ const AdminLayout = () => {
                         <span className="icon"><Settings size={20} /></span>
                         Settings
                     </NavLink>
-
-                    <button
-                        className={`theme-shortcut ${isDarkMode ? 'active' : ''}`}
-                        onClick={toggleDarkMode}
-                        aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                        title={isDarkMode ? 'Light mode' : 'Dark mode'}
-                    >
-                        <span className="theme-shortcut-symbol" aria-hidden="true">
-                            {isDarkMode ? '🌙' : '☀️'}
-                        </span>
-                    </button>
                 </div>
             </aside>
 
@@ -179,10 +181,14 @@ const AdminLayout = () => {
                     </div>
 
                     <div className="topbar-right">
-                        <div className="search-bar">
-                            <Search size={16} className="search-icon" />
-                            <input type="text" placeholder="Search system..." className="search-input" />
-                        </div>
+                        <button
+                            className="btn-icon"
+                            onClick={toggleDarkMode}
+                            aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                            title={isDarkMode ? 'Light mode' : 'Dark mode'}
+                        >
+                            <span aria-hidden="true">{isDarkMode ? '🌙' : '☀️'}</span>
+                        </button>
 
                         <NotificationPanel />
 

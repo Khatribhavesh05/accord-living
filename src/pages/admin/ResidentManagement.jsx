@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { PageHeader, Card, StatusBadge, Button } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import Modal from '../../components/ui/Modal';
+import { Home, Mail, Phone, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { generateCredential } from '../../firebase/credentialService';
 import {
@@ -14,6 +15,7 @@ import {
     subscribeToFlats,
 } from '../../firebase/flatService';
 import { updateUserProfile } from '../../firebase/userService';
+import '../../styles/ResidentManagement.css';
 
 const ResidentManagement = () => {
     const toast = useToast();
@@ -169,6 +171,20 @@ const ResidentManagement = () => {
     const hasResidents = Array.isArray(residents) && residents.length > 0;
     const requiresCredentialSetup = !editingResident || !editingResident.uid;
 
+    const residentStats = useMemo(() => {
+        const total = residents.length;
+        const active = residents.filter((r) => String(r.status || '').toLowerCase() === 'active').length;
+        const inactive = Math.max(0, total - active);
+        return { total, active, inactive };
+    }, [residents]);
+
+    const getResidentInitials = (name) => String(name || 'R')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join('') || 'R';
+
     return (
         <>
             <PageHeader
@@ -178,19 +194,45 @@ const ResidentManagement = () => {
             />
 
             {!hasResidents ? (
-                <Card className="text-center p-12">
-                    <h3 className="text-lg font-semibold text-gray-700">No residents found</h3>
-                    <p className="text-gray-500 mt-2">
+                <Card className="resident-empty-card">
+                    <div className="resident-empty-icon"><Users size={22} /></div>
+                    <h3>No residents found</h3>
+                    <p>
                         {flats.length > 0
                             ? 'Get started by assigning a resident to one of your flats.'
                             : 'Create flats in onboarding first, then add residents here.'}
                     </p>
-                    <Button variant="primary" style={{ marginTop: '16px' }} onClick={openAddModal}>+ Add Resident</Button>
+                    <Button variant="primary" onClick={openAddModal}>+ Add Resident</Button>
                 </Card>
             ) : (
-                <Card>
-                    <div style={{ overflowX: 'auto' }}>
-                        <table className="table" style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
+                <>
+                    <div className="resident-stats-row">
+                        <Card className="resident-stat-card">
+                            <div className="resident-stat-icon"><Users size={16} /></div>
+                            <div>
+                                <p>Total Residents</p>
+                                <strong>{residentStats.total}</strong>
+                            </div>
+                        </Card>
+                        <Card className="resident-stat-card">
+                            <div className="resident-stat-icon active"><Home size={16} /></div>
+                            <div>
+                                <p>Active</p>
+                                <strong>{residentStats.active}</strong>
+                            </div>
+                        </Card>
+                        <Card className="resident-stat-card">
+                            <div className="resident-stat-icon inactive"><Home size={16} /></div>
+                            <div>
+                                <p>Inactive</p>
+                                <strong>{residentStats.inactive}</strong>
+                            </div>
+                        </Card>
+                    </div>
+
+                    <Card className="resident-table-card">
+                    <div className="resident-table-wrap">
+                        <table className="resident-table">
                             <colgroup>
                                 <col />
                                 <col />
@@ -199,22 +241,36 @@ const ResidentManagement = () => {
                                 <col style={{ width: '96px' }} />
                             </colgroup>
                             <thead>
-                                <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--border)' }}>
-                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px', verticalAlign: 'middle' }}>Name</th>
-                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px', verticalAlign: 'middle' }}>Flat Number</th>
-                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px', verticalAlign: 'middle' }}>Email</th>
-                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px', verticalAlign: 'middle' }}>Status</th>
-                                    <th style={{ padding: '16px', color: 'var(--text-secondary)', fontWeight: '600', fontSize: '14px', textAlign: 'center', verticalAlign: 'middle' }}>Actions</th>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Flat Number</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th className="align-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {residents.map((resident) => (
-                                    <tr key={resident.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                        <td style={{ padding: '16px', fontWeight: '500', color: 'var(--text-primary)', verticalAlign: 'middle' }}>{resident.name}</td>
-                                        <td style={{ padding: '16px', fontFamily: 'monospace', fontWeight: 'bold', verticalAlign: 'middle' }}>{resident.flat}</td>
-                                        <td style={{ padding: '16px', color: 'var(--text-secondary)', verticalAlign: 'middle' }}>{resident.email}</td>
-                                        <td style={{ padding: '16px', verticalAlign: 'middle' }}><StatusBadge status={resident.status} /></td>
-                                        <td style={{ padding: '16px', textAlign: 'center', verticalAlign: 'middle' }}>
+                                    <tr key={resident.id}>
+                                        <td>
+                                            <div className="resident-name-cell">
+                                                <span className="resident-avatar">{getResidentInitials(resident.name)}</span>
+                                                <div className="resident-name-meta">
+                                                    <strong>{resident.name}</strong>
+                                                    {resident.phone ? (
+                                                        <span><Phone size={12} /> {resident.phone}</span>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className="resident-flat-pill">{resident.flat}</span>
+                                        </td>
+                                        <td>
+                                            <span className="resident-email"><Mail size={13} /> {resident.email}</span>
+                                        </td>
+                                        <td><StatusBadge status={resident.status} /></td>
+                                        <td className="align-center">
                                             <Button variant="secondary" size="sm" onClick={() => openEditModal(resident)}>Edit</Button>
                                         </td>
                                     </tr>
@@ -222,7 +278,8 @@ const ResidentManagement = () => {
                             </tbody>
                         </table>
                     </div>
-                </Card>
+                    </Card>
+                </>
             )}
 
             <Modal isOpen={modalOpen} title={editingResident ? 'Edit Resident' : 'Add New Resident'} onClose={() => setModalOpen(false)}>

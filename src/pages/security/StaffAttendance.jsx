@@ -178,13 +178,23 @@ export default function StaffAttendance() {
             return;
         }
 
+        if (!user?.societyId) {
+            alert("Society is not linked yet. Please contact admin and try again.");
+            return;
+        }
+
+        if (!user?.uid && !user?.id) {
+            alert("User session is invalid. Please login again.");
+            return;
+        }
+
         if (isResolvingLocation) {
             alert("Please wait while location name is being resolved.");
             return;
         }
 
         try {
-            await markStaffIn(user?.id || user?.uid || "security-guard", user?.societyId || "default-society", {
+            await markStaffIn(user?.uid || user?.id, user?.societyId, {
                 staffName: user?.name || "Security Guard",
                 location: {
                     ...location,

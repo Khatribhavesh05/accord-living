@@ -2,12 +2,13 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Users, UserCheck, UserX, Clock,
-    ClipboardList, Search, Trash2, Download,
+    ClipboardList, Search, Trash2,
     MapPin, Camera, Shield, CalendarDays,
     CheckCircle2, XCircle, ExternalLink
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { subscribeToTodayAttendance } from "../../firebase/attendanceService";
+import { subscribeToSecurityStaff } from "../../firebase/staffService";
 import "../../styles/AttendanceLogs.css";
 
 export default function AttendanceLogs() {
@@ -15,9 +16,10 @@ export default function AttendanceLogs() {
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("All");
     const [lightboxImg, setLightboxImg] = useState(null);
+    const [securityStaff, setSecurityStaff] = useState([]);
     const navigate = useNavigate();
     const { user } = useAuth();
-    const societyId = user?.societyId || "default-society";
+    const societyId = user?.societyId || null;
 
     const formatLocationLabel = (address = {}, fallback = "") => {
         const landmark = [
@@ -50,20 +52,13 @@ export default function AttendanceLogs() {
         return fallback || 'Location name unavailable';
     };
 
-    const resolveLocationName = async (lat, lng) => {
-        try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
-            if (!response.ok) return 'Location name unavailable';
-            const result = await response.json();
-            return formatLocationLabel(result?.address || {}, result?.display_name || '');
-        } catch {
-            return 'Location name unavailable';
-        }
-    };
-
     useEffect(() => {
         const unsub = subscribeToTodayAttendance(societyId, setRecords);
-        return () => unsub && unsub();
+        const unsubStaff = subscribeToSecurityStaff(societyId, setSecurityStaff);
+        return () => {
+            unsub && unsub();
+            unsubStaff && unsubStaff();
+        };
     }, [societyId]);
 
     const clearLogs = () => {
@@ -73,12 +68,23 @@ export default function AttendanceLogs() {
 
     // ── Derived stats ──
     const stats = useMemo(() => {
-        const total = records.length;
-        const present = records.filter(r => (r.status || '').toLowerCase() === "present" || (r.status || '').toLowerCase() === "checked in").length;
-        const absent = records.filter(r => r.status?.toLowerCase() === "absent").length;
+        const total = securityStaff.length || records.length;
+
+        const presentStaffIds = new Set(
+            records
+                .filter(r => {
+                    const s = (r.status || '').toLowerCase();
+                    return s === 'present' || s === 'checked in' || s === 'completed';
+                })
+                .map(r => r.staffId || r.staffName || r.staff)
+                .filter(Boolean)
+        );
+
+        const present = presentStaffIds.size || records.length;
+        const absent = Math.max(total - present, 0);
         const late = records.filter(r => r.status?.toLowerCase() === "late").length;
-        return { total, present: present || total, absent, late };
-    }, [records]);
+        return { total, present, absent, late };
+    }, [records, securityStaff]);
 
     // ── Filtering (UI-only) ──
     const filteredRecords = useMemo(() => {
@@ -93,7 +99,7 @@ export default function AttendanceLogs() {
         if (statusFilter !== "All") {
             result = result.filter(r => {
                 const s = r.status?.toLowerCase() || "";
-                if (statusFilter === "Present") return s === "present" || s === "checked in";
+                if (statusFilter === "Present") return s === "present" || s === "checked in" || s === "completed";
                 if (statusFilter === "Absent") return s === "absent";
                 if (statusFilter === "Late") return s === "late";
                 return true;
@@ -104,7 +110,7 @@ export default function AttendanceLogs() {
 
     const getStatusBadge = (status) => {
         const s = (status || "").toLowerCase();
-        if (s === "present" || s === "checked in") return "b-present";
+        if (s === "present" || s === "checked in" || s === "completed") return "b-present";
         if (s === "absent") return "b-absent";
         if (s === "late") return "b-late";
         return "b-present";
@@ -213,7 +219,7 @@ export default function AttendanceLogs() {
                             <div className="al-empty-icon"><ClipboardList size={36} /></div>
                             <h3>No Attendance Records</h3>
                             <p>Staff attendance will appear here once check-ins are recorded from the Security panel</p>
-                            <button className="al-empty-btn" onClick={() => navigate('/security')}>
+                                <button className="al-empty-btn" onClick={() => navigate('/security/attendance')}>
                                 <Shield size={16} /> View Security Panel
                             </button>
                         </div>
@@ -242,14 +248,14 @@ export default function AttendanceLogs() {
                                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                         fontWeight: 800, fontSize: 13, flexShrink: 0
                                                     }}>
-                                                        {(r.staff || 'S')[0].toUpperCase()}
+                                                        {(r.staff || r.staffName || 'S')[0].toUpperCase()}
                                                     </div>
-                                                    {r.staff}
+                                                    {r.staff || r.staffName || 'Security Staff'}
                                                 </div>
                                             </td>
                                             <td>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#64748b', fontSize: 13 }}>
-                                                    <CalendarDays size={13} /> {r.time}
+                                                    <CalendarDays size={13} /> {r.time || '-'}
                                                 </div>
                                             </td>
                                             <td>
@@ -275,12 +281,12 @@ export default function AttendanceLogs() {
                                                 </span>
                                             </td>
                                             <td>
-                                                {r.image && r.image.startsWith("data:") ? (
+                                                {(r.image || r.proofImage) && (r.image || r.proofImage).startsWith("data:") ? (
                                                     <img
-                                                        src={r.image}
+                                                        src={r.image || r.proofImage}
                                                         alt="proof"
                                                         className="al-proof-thumb"
-                                                        onClick={() => setLightboxImg(r.image)}
+                                                        onClick={() => setLightboxImg(r.image || r.proofImage)}
                                                     />
                                                 ) : (
                                                     <span style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>
@@ -289,10 +295,10 @@ export default function AttendanceLogs() {
                                                 )}
                                             </td>
                                             <td>
-                                                {r.image && r.image.startsWith("data:") && (
+                                                {(r.image || r.proofImage) && (r.image || r.proofImage).startsWith("data:") && (
                                                     <button
                                                         className="al-btn-outline"
-                                                        onClick={() => setLightboxImg(r.image)}
+                                                        onClick={() => setLightboxImg(r.image || r.proofImage)}
                                                         style={{ fontSize: 12, padding: '5px 10px' }}
                                                     >
                                                         <ExternalLink size={12} /> View

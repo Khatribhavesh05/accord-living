@@ -1,5 +1,6 @@
-const NOTIFICATIONS_KEY = 'civiora_notifications_v1';
-const NOTIFY_EVENT = 'civiora-notifications-updated';
+const NOTIFICATIONS_KEY = 'accord-living_notifications_v1';
+const NOTIFY_EVENT = 'accord-living-notifications-updated';
+const NOTIFICATION_READS_KEY = 'accord-living_notification_reads_v1';
 
 const safeParse = (value, fallback) => {
   try {
@@ -15,9 +16,20 @@ const getStoredNotifications = () => {
   return safeParse(window.localStorage.getItem(NOTIFICATIONS_KEY), []);
 };
 
+const getStoredReadState = () => {
+  if (typeof window === 'undefined') return {};
+  return safeParse(window.localStorage.getItem(NOTIFICATION_READS_KEY), {});
+};
+
 const persistNotifications = (notifications) => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications));
+  window.dispatchEvent(new CustomEvent(NOTIFY_EVENT));
+};
+
+const persistReadState = (reads) => {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(NOTIFICATION_READS_KEY, JSON.stringify(reads));
   window.dispatchEvent(new CustomEvent(NOTIFY_EVENT));
 };
 
@@ -61,6 +73,30 @@ const formatRelativeTime = (isoDate) => {
 };
 
 export const getNotificationUpdateEvent = () => NOTIFY_EVENT;
+
+export const buildNotificationScope = (...parts) => parts.filter(Boolean).join(':');
+
+export const isScopedNotificationRead = (scope, id) => {
+  if (!scope || !id) return false;
+  const reads = getStoredReadState();
+  return Boolean(reads[`${scope}:${id}`]);
+};
+
+export const markScopedNotificationAsRead = (scope, id) => {
+  if (!scope || !id) return;
+  const reads = getStoredReadState();
+  reads[`${scope}:${id}`] = true;
+  persistReadState(reads);
+};
+
+export const markScopedNotificationsAsRead = (scope, ids = []) => {
+  if (!scope) return;
+  const reads = getStoredReadState();
+  ids.forEach((id) => {
+    if (id) reads[`${scope}:${id}`] = true;
+  });
+  persistReadState(reads);
+};
 
 export const listNotificationsForCurrentUser = () => {
   const user = getCurrentUser();

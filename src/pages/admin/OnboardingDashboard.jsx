@@ -508,7 +508,7 @@ const OnboardingDashboard = () => {
         <div className="onb-page">
             <div className="onb-card">
                 <div className="onb-header">
-                    <h1 className="onb-brand">CIVIORA Setup</h1>
+                    <h1 className="onb-brand">ACCORD LIVING Setup</h1>
                     <p className="onb-society-name">{user?.name || 'Admin'} — Society Onboarding</p>
                 </div>
 

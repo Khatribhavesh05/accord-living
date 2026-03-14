@@ -34,7 +34,7 @@ const generateTempPassword = () => {
 
 // Reuse a single secondary app instance for the lifetime of the page.
 // NEVER call deleteApp() on it — doing so corrupts the primary Firestore WebChannel state.
-const SECONDARY_APP_NAME = 'civiora-secondary-auth';
+const SECONDARY_APP_NAME = 'accord-living-secondary-auth';
 
 const getSecondaryAuth = () => {
   const existing = getApps().find((a) => a.name === SECONDARY_APP_NAME);

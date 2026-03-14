@@ -25,7 +25,7 @@ const lsGet = () => {
 };
 const lsSet = (data) => {
     localStorage.setItem(LS_KEY, JSON.stringify(data));
-    window.dispatchEvent(new CustomEvent('civiora-violations-updated'));
+    window.dispatchEvent(new CustomEvent('accord-living-violations-updated'));
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ export const createViolation = async ({
     });
 
     // Broadcast for cross-tab realtime (localStorage fallback path)
-    window.dispatchEvent(new CustomEvent('civiora-violations-updated'));
+    window.dispatchEvent(new CustomEvent('accord-living-violations-updated'));
 
     return savedRecord;
 };
@@ -111,8 +111,8 @@ export const subscribeToViolations = (callback) => {
     // TODO: Firebase - subscribe to Firestore violations collection with onSnapshot
     // localStorage event-based subscription (cross-tab)
     const handler = () => callback({ eventType: 'localStorage' });
-    window.addEventListener('civiora-violations-updated', handler);
-    return () => window.removeEventListener('civiora-violations-updated', handler);
+    window.addEventListener('accord-living-violations-updated', handler);
+    return () => window.removeEventListener('accord-living-violations-updated', handler);
 };
 
 // ── Aggregate stats ───────────────────────────────────────────────────────────

@@ -386,7 +386,7 @@ export const subscribeToVisitorSettings = (callback) => {
         } else {
             // Return default settings if none exist
             callback({
-                society_name: 'CIVIORA',
+                society_name: 'ACCORD LIVING',
                 require_resident_approval: true,
                 enable_qr_pass: false,
                 enable_photo_capture: false,
@@ -401,7 +401,7 @@ export const subscribeToVisitorSettings = (callback) => {
     }, (error) => {
         console.error('[Firestore Error] subscribeToVisitorSettings:', error);
         callback({
-            society_name: 'CIVIORA',
+            society_name: 'ACCORD LIVING',
             require_resident_approval: true,
             enable_qr_pass: false,
             enable_photo_capture: false,

@@ -15,7 +15,7 @@ import {
 const SecurityLayout = () => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [profileOpen, setProfileOpen] = useState(false);
-    const [societyName, setSocietyName] = useState('CIVIORA');
+    const [societyName, setSocietyName] = useState('ACCORD LIVING');
     const navigate = useNavigate();
     const location = useLocation();
     const toast = useToast();
@@ -33,12 +33,12 @@ const SecurityLayout = () => {
 
     useEffect(() => {
         if (!user?.societyId) {
-            setSocietyName(user?.societyName || 'CIVIORA');
+            setSocietyName(user?.societyName || 'ACCORD LIVING');
             return () => {};
         }
 
         return subscribeToSociety(user.societyId, (society) => {
-            setSocietyName(society?.name || user?.societyName || 'CIVIORA');
+            setSocietyName(society?.name || user?.societyName || 'ACCORD LIVING');
         });
     }, [user?.societyId, user?.societyName]);
 
@@ -80,7 +80,7 @@ const SecurityLayout = () => {
                             </div>
                             <div className="brand-copy">
                                 <h2 id="societyName">{societyName}</h2>
-                                <span className="brand-meta">CIVIORA Security</span>
+                                <span className="brand-meta">ACCORD LIVING Security</span>
                             </div>
                         </div>
                         <div className="mobile-close-btn" style={{ display: 'none' }} onClick={() => setSidebarOpen(false)}>

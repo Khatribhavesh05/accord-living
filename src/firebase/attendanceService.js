@@ -16,6 +16,31 @@ import {
 
 const COLLECTION = 'attendance';
 
+const formatTime = (ts) => {
+  const date = ts?.toDate?.() || (ts instanceof Date ? ts : null);
+  if (!date) return '-';
+  return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+};
+
+const normalizeAttendanceDoc = (docId, data = {}) => {
+  const inTimestamp = data.inTime || data.createdAt || null;
+  const outTimestamp = data.outTime || null;
+  const staffName = data.staffName || data.staff || data.guardName || 'Security Staff';
+  return {
+    id: docId,
+    ...data,
+    staff: staffName,
+    staffName,
+    time: data.time || formatTime(inTimestamp),
+    image: data.image || data.proofImage || null,
+    proofImage: data.proofImage || data.image || null,
+    locationName: data.locationName || data.location?.name || '',
+    inTime: inTimestamp,
+    outTime: outTimestamp,
+    status: (data.status || 'present').toString(),
+  };
+};
+
 const withTimestampsForCreate = (data) => ({
   ...data,
   inTime: serverTimestamp(),
@@ -72,24 +97,34 @@ export const getAttendanceById = async (attendanceId) => {
 
 // Today subscription: filter by society and "today" range on createdAt
 export const subscribeToTodayAttendance = (societyId, callback) => {
+  if (!societyId) {
+    callback([]);
+    return () => {};
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
 
-  const baseQuery = [
-    where('societyId', '==', societyId),
-    where('createdAt', '>=', today),
-    where('createdAt', '<', tomorrow),
-    orderBy('createdAt', 'desc'),
-  ];
-
-  const q = query(collection(db, COLLECTION), ...baseQuery);
+  const q = query(collection(db, COLLECTION), where('societyId', '==', societyId));
 
   return onSnapshot(
     q,
     (snapshot) => {
-      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const items = snapshot.docs
+        .map((d) => normalizeAttendanceDoc(d.id, d.data()))
+        .filter((item) => {
+          const ts = item?.inTime?.toDate?.() || item?.createdAt?.toDate?.() || null;
+          // Include in-flight writes with pending server timestamps so UI updates immediately.
+          if (!ts) return true;
+          return ts >= today && ts < tomorrow;
+        })
+        .sort((a, b) => {
+          const at = a?.inTime?.toDate?.()?.getTime?.() || a?.createdAt?.toDate?.()?.getTime?.() || 0;
+          const bt = b?.inTime?.toDate?.()?.getTime?.() || b?.createdAt?.toDate?.()?.getTime?.() || 0;
+          return bt - at;
+        });
       callback(items);
     },
     (error) => {
@@ -120,7 +155,7 @@ export const subscribeToMonthlyAttendance = (staffId, month, year, callback) => 
   return onSnapshot(
     q,
     (snapshot) => {
-      const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const items = snapshot.docs.map((d) => normalizeAttendanceDoc(d.id, d.data()));
       callback(items);
     },
     (error) => {
@@ -135,6 +170,6 @@ export const fetchAttendanceOnce = async (societyId) => {
     ? query(collection(db, COLLECTION), where('societyId', '==', societyId))
     : query(collection(db, COLLECTION));
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  return snap.docs.map((d) => normalizeAttendanceDoc(d.id, d.data()));
 };
 

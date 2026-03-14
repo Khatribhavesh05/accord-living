@@ -1,4 +1,4 @@
-// Firestore Security Rules for CIVIORA Multi-Tenant System
+// Firestore Security Rules for ACCORD LIVING Multi-Tenant System
 // Deploy these rules in Firebase Console → Firestore → Rules tab
 
 rules_version = '2';

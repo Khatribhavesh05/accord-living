@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowRight, Building2, Home, Lock, Shield, ShieldCheck, Sparkles } from 'lucide-react';
 import '../styles/LandingPage.css';
 
 const LandingPage = () => {
@@ -10,11 +11,11 @@ const LandingPage = () => {
                 <div className="hero-left">
                     <div className="hero-overlay"></div>
                     <div className="hero-content">
-                        <h1 className="hero-title">CIVIORA</h1>
+                        <h1 className="hero-title">ACCORD LIVING</h1>
                         <h2 className="hero-tagline">Smart management for modern residential societies</h2>
                         <p className="hero-description">
                             Managing a residential society shouldn’t be chaotic.
-                            CIVIORA brings residents, administrators, and security together on one secure platform.
+                            ACCORD LIVING brings residents, administrators, and security together on one secure platform.
                         </p>
                         <p className="hero-supporting">
                             Designed for gated communities that want clarity, control, and accountability — without complexity.
@@ -23,27 +24,70 @@ const LandingPage = () => {
                 </div>
                 <div className="hero-right">
                     <div className="landing-cta-panel">
-                        <div className="landing-cta-icon">🏢</div>
-                        <h2 className="landing-cta-title">Live in Harmony</h2>
-                        <p className="landing-cta-sub">Create a society first, or choose the right portal for Admin, Resident, or Security login.</p>
-                        <div className="landing-cta-buttons">
+                        <div className="landing-cta-shell">
+                            <div className="landing-cta-header">
+                                <div className="landing-cta-icon" aria-hidden="true">
+                                    <Sparkles size={28} />
+                                </div>
+                                <div className="landing-cta-copy">
+                                    <h2 className="landing-cta-title">Welcome to Accord Living</h2>
+                                    <p className="landing-cta-sub">Choose your portal to continue</p>
+                                </div>
+                            </div>
+
                             <Link to="/signup/create-society" className="landing-btn landing-btn-primary">
-                                🚀 Create New Society
+                                <span className="landing-btn-icon" aria-hidden="true">
+                                    <Building2 size={18} />
+                                </span>
+                                <span>Create New Society</span>
+                                <span className="landing-btn-arrow" aria-hidden="true">
+                                    <ArrowRight size={18} />
+                                </span>
                             </Link>
-                        </div>
-                        <div className="landing-login-options">
+
+                            <div className="landing-login-options">
                             <Link to="/login?role=admin" className="landing-role-card admin">
-                                <span className="landing-role-label">Admin Login</span>
-                                <span className="landing-role-hint">Society setup, billing, residents</span>
+                                <span className="landing-role-icon" aria-hidden="true">
+                                    <Shield size={20} />
+                                </span>
+                                <span className="landing-role-content">
+                                    <span className="landing-role-label">Admin Login</span>
+                                    <span className="landing-role-hint">Society setup, billing, residents</span>
+                                </span>
+                                <span className="landing-role-arrow" aria-hidden="true">
+                                    <ArrowRight size={18} />
+                                </span>
                             </Link>
                             <Link to="/login?role=resident" className="landing-role-card resident">
-                                <span className="landing-role-label">Resident Login</span>
-                                <span className="landing-role-hint">Bills, complaints, announcements</span>
+                                <span className="landing-role-icon" aria-hidden="true">
+                                    <Home size={20} />
+                                </span>
+                                <span className="landing-role-content">
+                                    <span className="landing-role-label">Resident Login</span>
+                                    <span className="landing-role-hint">Bills, complaints, announcements</span>
+                                </span>
+                                <span className="landing-role-arrow" aria-hidden="true">
+                                    <ArrowRight size={18} />
+                                </span>
                             </Link>
                             <Link to="/login?role=security" className="landing-role-card security">
-                                <span className="landing-role-label">Security Login</span>
-                                <span className="landing-role-hint">Visitor entry, attendance, alerts</span>
+                                <span className="landing-role-icon" aria-hidden="true">
+                                    <ShieldCheck size={20} />
+                                </span>
+                                <span className="landing-role-content">
+                                    <span className="landing-role-label">Security Login</span>
+                                    <span className="landing-role-hint">Visitor entry, attendance, alerts</span>
+                                </span>
+                                <span className="landing-role-arrow" aria-hidden="true">
+                                    <ArrowRight size={18} />
+                                </span>
                             </Link>
+
+                            <div className="landing-cta-footer">
+                                <Lock size={15} aria-hidden="true" />
+                                <span>Secure access for your society management platform.</span>
+                            </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -87,7 +131,7 @@ const LandingPage = () => {
                 <div className="container">
                     <h2 className="section-title">One platform. Complete control. Total transparency.</h2>
                     <p className="solution-text">
-                        CIVIORA replaces scattered processes with a single, role-based system
+                        ACCORD LIVING replaces scattered processes with a single, role-based system
                         designed specifically for residential communities.
                         From maintenance management and security logs to community notices
                         and lost items, everything stays organized in one place.
@@ -132,7 +176,7 @@ const LandingPage = () => {
 
             <section className="landing-section section-how">
                 <div className="container">
-                    <h2 className="section-title">How CIVIORA works</h2>
+                    <h2 className="section-title">How ACCORD LIVING works</h2>
                     <div className="steps-list">
                         <div className="step-item">
                             <span className="step-number">1</span>
@@ -168,7 +212,7 @@ const LandingPage = () => {
 
 
             <footer className="landing-footer">
-                <p>CIVIORA — simplifying community living through technology.</p>
+                <p>ACCORD LIVING — simplifying community living through technology.</p>
             </footer>
         </div>
     );

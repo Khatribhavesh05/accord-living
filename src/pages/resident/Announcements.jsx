@@ -6,6 +6,13 @@ import {
 } from 'lucide-react';
 import { subscribeToAnnouncements } from '../../firebase/announcementService';
 import { useAuth } from '../../context/AuthContext';
+import {
+    buildNotificationScope,
+    getNotificationUpdateEvent,
+    isScopedNotificationRead,
+    markScopedNotificationAsRead,
+    markScopedNotificationsAsRead,
+} from '../../utils/notificationStorage';
 import './Announcements.css';
 
 const Announcements = () => {
@@ -14,7 +21,19 @@ const Announcements = () => {
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedIds, setExpandedIds] = useState([]);
-    const [readIds, setReadIds] = useState(new Set());
+    const [syncTick, setSyncTick] = useState(0);
+    const announcementScope = buildNotificationScope('resident-announcements', user?.uid || user?.id, societyId);
+
+    useEffect(() => {
+        const sync = () => setSyncTick((value) => value + 1);
+        const eventName = getNotificationUpdateEvent();
+        window.addEventListener(eventName, sync);
+        window.addEventListener('storage', sync);
+        return () => {
+            window.removeEventListener(eventName, sync);
+            window.removeEventListener('storage', sync);
+        };
+    }, []);
 
     useEffect(() => {
         if (!societyId) return;
@@ -32,7 +51,7 @@ const Announcements = () => {
             setLoading(false);
         });
         return () => unsub();
-    }, [societyId]);
+    }, [societyId, syncTick]);
 
     // ── Handlers ──
     const toggleExpand = (id) => {
@@ -42,15 +61,15 @@ const Announcements = () => {
     };
 
     const markAsRead = (id) => {
-        setReadIds(prev => new Set([...prev, id]));
+        markScopedNotificationAsRead(announcementScope, id);
     };
 
     const markAllAsRead = () => {
-        setReadIds(new Set(announcements.map(a => a.id)));
+        markScopedNotificationsAsRead(announcementScope, announcements.map((a) => a.id));
     };
 
     // ── Derived Data ──
-    const enriched = announcements.map(a => ({ ...a, isRead: readIds.has(a.id) }));
+    const enriched = announcements.map(a => ({ ...a, isRead: isScopedNotificationRead(announcementScope, a.id) }));
     const unreadCount = enriched.filter(a => !a.isRead).length;
     const pinnedAnnouncements = enriched.filter(a => a.isPinned);
     const recentAnnouncements = enriched.filter(a => !a.isPinned && !a.isRead);

@@ -81,7 +81,7 @@ const Login = () => {
         <div className="login-container">
             <div className="login-card">
                 <div className="logo-section">
-                    <h1 className="heading">CIVIORA</h1>
+                    <h1 className="heading">ACCORD LIVING</h1>
                     <p className="subtitle">Login to manage maintenance payments</p>
                     <p className="role-text">For society members and committee administrators</p>
                 </div>

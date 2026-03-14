@@ -1,74 +1,58 @@
 .settings-container {
-  max-width: 900px;
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-  background: var(--card);
-  border-radius: 12px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--card) 92%, #ffffff 8%), var(--card));
+  border-radius: 16px;
   border: 1px solid var(--border);
   overflow: hidden;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
 }
 
 .settings-tabs {
   display: flex;
-  border-bottom: 2px solid var(--border);
-  background: var(--hover-bg);
-  padding: 0;
-  gap: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-  scrollbar-gutter: stable;
-  -webkit-overflow-scrolling: touch;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--hover-bg) 70%, var(--card) 30%);
+  padding: 10px;
+  gap: 8px;
 }
 
 .settings-tab {
   flex: 0 0 auto;
-  min-width: 140px;
-  padding: 16px 20px;
+  min-width: 132px;
+  padding: 12px 16px;
   border: none;
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-bottom: 3px solid transparent;
-  position: relative;
-  bottom: -2px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   white-space: nowrap;
 }
 
 .settings-tab:hover {
   color: var(--text-primary);
-  background: rgba(79, 70, 229, 0.05);
+  background: rgba(79, 70, 229, 0.08);
 }
 
 .settings-tab.active {
   color: #4F46E5;
-  border-bottom-color: #4F46E5;
+  border-color: rgba(79, 70, 229, 0.24);
   background: var(--card);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.14);
 }
 
 .settings-tab:focus-visible {
   outline: 2px solid #4F46E5;
   outline-offset: -2px;
-}
-
-.settings-tabs::-webkit-scrollbar {
-  height: 8px;
-}
-
-.settings-tabs::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.settings-tabs::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.5);
-  border-radius: 999px;
 }
 
 .tab-icon {
@@ -104,12 +88,13 @@
 }
 
 .settings-section h2 {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 26px;
+  font-weight: 700;
   margin: 0 0 24px 0;
   color: var(--text-primary);
-  padding-bottom: 12px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
+  letter-spacing: -0.02em;
 }
 
 .setting-item {
@@ -189,20 +174,21 @@
 /* Input Fields in Settings */
 .settings-input {
   width: 100%;
-  padding: 10px 14px;
+  padding: 11px 14px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   background: var(--bg);
   color: var(--text-primary);
   font-size: 14px;
   transition: all 0.2s ease;
   font-family: inherit;
+  min-height: 46px;
 }
 
 .settings-input:focus {
   outline: none;
   border-color: #4F46E5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
 }
 
 .settings-input::placeholder {
@@ -245,23 +231,25 @@
 }
 
 .settings-button {
-  padding: 10px 20px;
+  padding: 11px 20px;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
 }
 
 .settings-button-primary {
-  background: #4F46E5;
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
   color: white;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.24);
 }
 
 .settings-button-primary:hover {
-  background: #4338CA;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(79, 70, 229, 0.28);
 }
 
 .settings-button-secondary {
@@ -303,7 +291,7 @@
 /* Alert Messages in Settings */
 .settings-alert {
   padding: 12px 16px;
-  border-radius: 6px;
+  border-radius: 10px;
   font-size: 13px;
   margin-bottom: 16px;
   display: flex;
@@ -336,17 +324,28 @@
   }
 
   .settings-tabs {
-    flex-wrap: wrap;
-    overflow-x: visible;
+    padding: 8px;
+    gap: 6px;
   }
 
   .settings-tab {
-    flex: 1 1 45%;
-    min-width: 140px;
+    flex: 1 1 calc(50% - 6px);
+    min-width: 124px;
+    padding: 10px 12px;
+    font-size: 13px;
   }
 
   .setting-item {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .settings-button-group {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .settings-button {
+    width: 100%;
   }
 }
